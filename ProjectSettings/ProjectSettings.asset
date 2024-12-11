@@ -686,11 +686,11 @@ PlayerSettings:
   m_MobileRenderingPath: 1
   metroPackageName: DamageSegmentationXR
   metroPackageVersion: 1.0.0.0
-  metroCertificatePath: 
+  metroCertificatePath: Assets/WSATestCertificate.pfx
   metroCertificatePassword: 
-  metroCertificateSubject: 
-  metroCertificateIssuer: 
-  metroCertificateNotAfter: 0000000000000000
+  metroCertificateSubject: Pantoja-Rosero
+  metroCertificateIssuer: Pantoja-Rosero
+  metroCertificateNotAfter: 001171b1746adc01
   metroApplicationDescription: DamageSegmentationXR
   wsaImages: {}
   metroTileShortName: DamageSegmentationXR

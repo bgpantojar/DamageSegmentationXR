@@ -1,0 +1,1 @@
+C:\Users\bgp573\Documents\Coding\DamageSegmentationXR\_builds\DamageSegmentationXR\DamageSegmentationXR.vcxproj;arm64

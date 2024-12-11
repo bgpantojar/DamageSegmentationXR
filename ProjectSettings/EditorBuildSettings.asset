@@ -4,7 +4,10 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/DamageSegmentationXRScene.unity
+    guid: 7cd063a32357d5240911fccc89609b75
   m_configObjects:
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 1de3db7603aeae34db5074e2ca818c73, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 341ef9f4f389e824cbfd283d4c2fc275, type: 2}
