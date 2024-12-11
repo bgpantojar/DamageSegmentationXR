@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using DamageSegmentationXR.Utils;
 using Unity.Sentis;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
@@ -21,8 +22,8 @@ public class GameManager : MonoBehaviour
     private int maxCameraTransformPoolSize = 5;
     [SerializeField]
     private Renderer inputDisplayerRenderer;
-    
-
+    private Texture2D storedTexture;
+    private Transform storedCameraTransform;
 
     // Start is called before the first frame update
     private async void Start()
@@ -44,8 +45,8 @@ public class GameManager : MonoBehaviour
         var renderTexture = new RenderTexture(yoloInputImageSize.x, yoloInputImageSize.y, 24);
 
         // Variables to control time to spawn results
-        float lastSpawnTime = Time.time; // Keep track of the last spawn time
-        float spawnInterval = 5.0f; // Interval to spawn the results displayer
+        //float lastSpawnTime = Time.time; // Keep track of the last spawn time
+        //float spawnInterval = 5.0f; // Interval to spawn the results displayer
 
         while (true)
         {
@@ -54,8 +55,8 @@ public class GameManager : MonoBehaviour
             var cameraTransform = cameraTransformPool[^1];
             
             // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
-            Graphics.Blit(webCamTexture, renderTexture);
-            //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
+            //Graphics.Blit(webCamTexture, renderTexture);
+            Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
             await Task.Delay(32);
 
             // Convert RenderTexure to a Texture2D
@@ -63,13 +64,16 @@ public class GameManager : MonoBehaviour
             await Task.Delay(32);
 
             // Check if it's time to spawn
-            if (Time.time - lastSpawnTime >= spawnInterval)
-            {
-                lastSpawnTime = Time.time; // Reset the timer
+            //if (Time.time - lastSpawnTime >= spawnInterval)
+            //{
+            //    lastSpawnTime = Time.time; // Reset the timer
+            //
+            //    // Spawn results displayer
+            //    frameResultsDisplayer.SpawnResultsDisplayer(texture, cameraTransform);
+            //}
 
-                // Spawn results displayer
-                frameResultsDisplayer.SpawnResultsDisplayer(texture, cameraTransform);
-                }
+            // Set results data parameters that are callable from OnButtonClick functions
+            SetResultsData(texture, cameraTransform);
 
             // Destroy the oldest cameraTransform gameObject from the Pool
             if (cameraTransformPool.Count > maxCameraTransformPoolSize)
@@ -78,5 +82,20 @@ public class GameManager : MonoBehaviour
                 cameraTransformPool.RemoveAt(0);
             }
         }
-    }    
+    }
+
+    // Method to store the data needed to call a function without parameters (OnButtonClick)
+    public void SetResultsData(Texture2D texture, Transform cameraTransform)
+    {
+        // Access to texture and cameraTransform info and stored it in variables accessible from OnButtonClick functions
+        storedTexture = texture;
+        storedCameraTransform = cameraTransform;
+    }
+
+    // Public method without parameters to be called from UI Button
+    public void OnButtonClickSpawnResultsDisplayer()
+    {
+        // Spawn results displayer using stored texture and cameraTransform
+        frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform);        
+    }
 }
