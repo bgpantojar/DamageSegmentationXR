@@ -24,10 +24,15 @@ public class GameManager : MonoBehaviour
     private Renderer inputDisplayerRenderer;
     private Texture2D storedTexture;
     private Transform storedCameraTransform;
+    private ModelInference modelInference;
+    public ModelAsset modelAsset;
 
     // Start is called before the first frame update
     private async void Start()
     {
+        // Initialize the ModelInference object
+        modelInference = new ModelInference(modelAsset);
+
         // Initialize the ResultDisplayer object
         frameResultsDisplayer = new FrameResults(resultsDisplayerPrefab);
 
@@ -62,6 +67,9 @@ public class GameManager : MonoBehaviour
             // Convert RenderTexure to a Texture2D
             var texture = renderTexture.ToTexture2D();
             await Task.Delay(32);
+
+            // Execute inference using as inputImage the 2D texture
+            modelInference.ExecuteInference(texture);
 
             // Check if it's time to spawn
             //if (Time.time - lastSpawnTime >= spawnInterval)

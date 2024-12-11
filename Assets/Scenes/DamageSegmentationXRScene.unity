@@ -552,6 +552,7 @@ MonoBehaviour:
   yoloInputImageSize: {x: 320, y: 320}
   resultsDisplayerPrefab: {fileID: 7235431374560862744, guid: 3a97cabc9a4aa9b438a64441c00337ee, type: 3}
   inputDisplayerRenderer: {fileID: 1756582094}
+  modelAsset: {fileID: 5022602860645237092, guid: ce3a33d922b339646ab2d97010a93a6e, type: 3}
 --- !u!1001 &645970591
 PrefabInstance:
   m_ObjectHideFlags: 0

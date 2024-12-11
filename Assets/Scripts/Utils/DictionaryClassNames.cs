@@ -1,0 +1,99 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace DamageSegmentation.Utils
+{
+    public class DictionaryClassNames
+    {
+        public string dataSet;
+        public string GetName(int classIndex)
+        {            
+            return detectableObjectsCOCO[classIndex];
+        }
+
+        private static List<string> detectableObjectsCOCO = new()
+        {
+            "Person",
+            "Bicycle",
+            "Car",
+            "Motorcycle",
+            "Airplane",
+            "Bus",
+            "Train",
+            "Truck",
+            "Boat",
+            "Traffic light",
+            "Fire hydrant",
+            "Stop sign",
+            "Parking meter",
+            "Bench",
+            "Bird",
+            "Cat",
+            "Dog",
+            "Horse",
+            "Sheep",
+            "Cow",
+            "Elephant",
+            "Bear",
+            "Zebra",
+            "Giraffe",
+            "Backpack",
+            "Umbrella",
+            "Handbag",
+            "Tie",
+            "Suitcase",
+            "Frisbee",
+            "Skis",
+            "Snowboard",
+            "Sports ball",
+            "Kite",
+            "Baseball bat",
+            "Baseball glove",
+            "Skateboard",
+            "Surfboard",
+            "Tennis racket",
+            "Bottle",
+            "Wine glass",
+            "Cup",
+            "Fork",
+            "Knife",
+            "Spoon",
+            "Bowl",
+            "Banana",
+            "Apple",
+            "Sandwich",
+            "Orange",
+            "Broccoli",
+            "Carrot",
+            "Hot dog",
+            "Pizza",
+            "Donut",
+            "Cake",
+            "Chair",
+            "Couch",
+            "Potted plant",
+            "Bed",
+            "Dining table",
+            "Toilet",
+            "TV",
+            "Laptop",
+            "Mouse",
+            "Remote",
+            "Keyboard",
+            "Cell phone",
+            "Microwave",
+            "Oven",
+            "Toaster",
+            "Sink",
+            "Refrigerator",
+            "Book",
+            "Clock",
+            "Vase",
+            "Scissors",
+            "Teddy bear",
+            "Hair drier",
+            "Toothbrush"
+        };
+    }
+}
