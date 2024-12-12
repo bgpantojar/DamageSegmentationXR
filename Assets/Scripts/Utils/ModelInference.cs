@@ -28,7 +28,7 @@ namespace DamageSegmentationXR.Utils
             classNames.dataSet = "COCO";
         }
 
-        public void ExecuteInference(Texture2D inputImage)
+        public void ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
         {
 
             // Convert a texture to a tensor
@@ -43,10 +43,166 @@ namespace DamageSegmentationXR.Utils
             Tensor<float> outputTensorSegment1 = workerSegment.PeekOutput("output1") as Tensor<float>;
             Debug.Log("Got the segmentation outputTensor1" + outputTensorSegment1);
 
+            //CPU-accessible copy
+            Tensor<float> resultsSegment0 = outputTensorSegment0.ReadbackAndClone();
+            Tensor<float> resultsSegment1 = outputTensorSegment1.ReadbackAndClone();
+
+            // Extract Bounding Boxes 
+            BoundingBox[] boundingBoxes = ExtractBoundingBoxesConfidence(resultsSegment0, classNames, confidenceThreshold);
+            Debug.Log($"Number of bounding boxes that meet the confidence criteria {boundingBoxes.Length}");
+
+            // Filter Bounding Boxes considering overlapping with IOU
+            BoundingBox[] filteredBoundingBoxes = FilterBoundingBoxesIoU(boundingBoxes, iouThreshold);
+            Debug.Log($"Number of filtered bounding boxes removing those that considerably overlap {filteredBoundingBoxes.Length}");
+
             // Dispose Tensor Data
             outputTensorSegment0.Dispose();
-            outputTensorSegment1?.Dispose();
+            outputTensorSegment1.Dispose();
+            resultsSegment0.Dispose();
+            resultsSegment1.Dispose();
             inputTensor.Dispose();
+        }
+
+        // Extract bounding boxes that meet with conficenceThreshold criteria
+        public BoundingBox[] ExtractBoundingBoxesConfidence(Tensor<float> result, DictionaryClassNames classNames, float confidenceThreshold = 0.2f)
+        {
+            // Get the number of attributes and number of bounding boxes output by the model
+            int numAttributes = result.shape[1]; // 116 attributes per box x, y, w, h, 80p, 32c
+            int numBoxes = result.shape[2]; // 2100 predicted boxes for yolo11n-seg-320
+                                           
+            // Create empty list to store the extracted bounding boxes that meet confidenceThreshold requirement
+            List<BoundingBox> boxes = new List<BoundingBox>();
+
+            // Iterate through each predicted box
+            for (int i = 0; i < numBoxes; i++)
+            {
+                // Find the class with the highest probability
+                int bestClassIndex = -1;
+                float maxClassProbability = 0.0f;
+                for (int c = 4; c < numAttributes - 32; c++) // Class probabilities(confidence) start at 5th index
+                {
+                    float classProbability = result[0, c, i];
+                    if (classProbability > maxClassProbability)
+                    {
+                        maxClassProbability = classProbability;
+                        bestClassIndex = c - 4; // Class index (0-based)
+                    }
+                }
+
+                // Only consider boxes with confidence above the threshold
+                if (maxClassProbability > confidenceThreshold)
+                {
+                    // Extract the bounding box coordinates
+                    float xCenter = result[0, 0, i]; // x center
+                    float yCenter = result[0, 1, i]; // y center
+                    float width = result[0, 2, i];   // width
+                    float height = result[0, 3, i];  // height
+
+                    // Get the name of the class
+                    string className = classNames.GetName(bestClassIndex);
+
+                    // Create a bounding box object and add it to the list
+                    BoundingBox box = new BoundingBox
+                    {
+                        x = xCenter,
+                        y = yCenter,
+                        width = width,
+                        height = height,
+                        classIndex = bestClassIndex,
+                        className = className,
+                        classProbability = maxClassProbability,
+
+                    };
+                    // Fill the maskCoefficients list with values from resultTensor[0, 84:116, b]
+                    for (int j = 0; j < 32; j++)
+                    {
+                        // Get the value from the result tensor at the specified position
+                        float coefficient = result[0, numAttributes - 32 + j, i];
+
+                        // Set the value in the maskCoefficients list
+                        box.maskCoefficients[j] = coefficient;
+                    }
+                    boxes.Add(box);
+                }
+            }
+            
+            // Dispose tensor
+            result.Dispose();
+
+            // Convert the list to an array and return
+            return boxes.ToArray();
+        }
+
+        // Filter out bounding boxes by checking the overlap among them using IoU.
+        public static BoundingBox[] FilterBoundingBoxesIoU(BoundingBox[] boundingBoxes, float iouThreshold = 0.4f)
+        {
+            List<BoundingBox> filteredBoxes = new List<BoundingBox>();
+            bool[] isRemoved = new bool[boundingBoxes.Length]; // Track which boxes are removed
+
+            // Iterate through each bounding box to compare with others
+            for (int i = 0; i < boundingBoxes.Length; i++)
+            {
+                if (isRemoved[i]) continue; // Skip if the box is already marked for removal
+
+                BoundingBox currentBox = boundingBoxes[i];
+                for (int j = i + 1; j < boundingBoxes.Length; j++)
+                {
+                    if (isRemoved[j]) continue; // Skip if the box is already marked for removal
+
+                    BoundingBox compareBox = boundingBoxes[j];
+                    float iou = CalculateIoU(currentBox, compareBox);
+
+                    if (iou > iouThreshold)
+                    {
+                        // Keep the box with the higher confidence
+                        if (currentBox.classProbability >= compareBox.classProbability)
+                        {
+                            isRemoved[j] = true; // Mark the box with lower confidence for removal
+                        }
+                        else
+                        {
+                            isRemoved[i] = true; // Mark the current box for removal
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Collect all boxes that are not removed
+            for (int i = 0; i < boundingBoxes.Length; i++)
+            {
+                if (!isRemoved[i])
+                {
+                    filteredBoxes.Add(boundingBoxes[i]);
+                }
+            }
+
+            // Return filteredBoxes as Array
+            return filteredBoxes.ToArray();
+        }
+
+        // Compute the IoU between two images to support the filtering of bounding boxes that overlap
+        private static float CalculateIoU(BoundingBox boxA, BoundingBox boxB)
+        {
+            // Calculate intersection area
+            float xA = Mathf.Max(boxA.x, boxB.x);
+            float yA = Mathf.Max(boxA.y, boxB.y);
+            float xB = Mathf.Min(boxA.x + boxA.width, boxB.x + boxB.width);
+            float yB = Mathf.Min(boxA.y + boxA.height, boxB.y + boxB.height);
+
+            float intersectionWidth = Mathf.Max(0, xB - xA);
+            float intersectionHeight = Mathf.Max(0, yB - yA);
+            float intersectionArea = intersectionWidth * intersectionHeight;
+
+            // Calculate area of each box
+            float boxAArea = boxA.width * boxA.height;
+            float boxBArea = boxB.width * boxB.height;
+
+            // Calculate union area
+            float unionArea = boxAArea + boxBArea - intersectionArea;
+
+            // Calculate IoU
+            return intersectionArea / unionArea;
         }
     }
 }

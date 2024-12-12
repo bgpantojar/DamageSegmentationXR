@@ -26,6 +26,8 @@ public class GameManager : MonoBehaviour
     private Transform storedCameraTransform;
     private ModelInference modelInference;
     public ModelAsset modelAsset;
+    public float confidenceThreshold = 0.2f;
+    public float iouThreshold = 0.4f;
 
     // Start is called before the first frame update
     private async void Start()
@@ -69,7 +71,7 @@ public class GameManager : MonoBehaviour
             await Task.Delay(32);
 
             // Execute inference using as inputImage the 2D texture
-            modelInference.ExecuteInference(texture);
+            modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
 
             // Check if it's time to spawn
             //if (Time.time - lastSpawnTime >= spawnInterval)
