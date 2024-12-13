@@ -5,6 +5,9 @@ using UnityEngine;
 using DamageSegmentationXR.Utils;
 using DamageSegmentation.Utils;
 using System.Data;
+using System.Threading.Tasks;
+using UnityEngine.Timeline;
+using static UnityEngine.UI.GridLayoutGroup;
 
 namespace DamageSegmentationXR.Utils
 {
@@ -21,27 +24,35 @@ namespace DamageSegmentationXR.Utils
             runtimeModel = ModelLoader.Load(modelAsset);
 
             // Create an inference engine (a worker) that runs in CPU
-            workerSegment = new Worker(this.runtimeModel, BackendType.CPU);
+            workerSegment = new Worker(runtimeModel, BackendType.CPU);
 
             // Initialize yoloClassNames
             classNames = new DictionaryClassNames();
             classNames.dataSet = "COCO";
         }
 
-        public void ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
+        //public void ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
+        public async Task ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
         {
 
             // Convert a texture to a tensor
             Tensor<float> inputTensor = TextureConverter.ToTensor(inputImage);
 
             // To run the model, use the schedule method
-            workerSegment.Schedule(inputTensor);
+            //workerSegment.Schedule(inputTensor);
 
             // Get the output
-            Tensor<float> outputTensorSegment0 = workerSegment.PeekOutput("output0") as Tensor<float>;
-            Debug.Log("Got the detection outputTensor0" + outputTensorSegment0);
-            Tensor<float> outputTensorSegment1 = workerSegment.PeekOutput("output1") as Tensor<float>;
-            Debug.Log("Got the segmentation outputTensor1" + outputTensorSegment1);
+            //Tensor<float> outputTensorSegment0 = workerSegment.PeekOutput("output0") as Tensor<float>;
+            //Debug.Log("Got the detection outputTensor0" + outputTensorSegment0);
+            //Tensor<float> outputTensorSegment1 = workerSegment.PeekOutput("output1") as Tensor<float>;
+            //Debug.Log("Got the segmentation outputTensor1" + outputTensorSegment1);
+
+            await Task.Delay(32);
+
+            // Run the model with the inpuTensor using the ForwadAsync.
+            (Tensor<float> outputTensorSegment0, Tensor<float> outputTensorSegment1) = await ForwardAsync(workerSegment, inputTensor);
+            //Debug.Log("Got the detection outputTensor0" + outputTensorSegment0);
+            //Debug.Log("Got the segmentation outputTensor1" + outputTensorSegment1);
 
             //CPU-accessible copy
             Tensor<float> resultsSegment0 = outputTensorSegment0.ReadbackAndClone();
@@ -49,11 +60,11 @@ namespace DamageSegmentationXR.Utils
 
             // Extract Bounding Boxes 
             BoundingBox[] boundingBoxes = ExtractBoundingBoxesConfidence(resultsSegment0, classNames, confidenceThreshold);
-            Debug.Log($"Number of bounding boxes that meet the confidence criteria {boundingBoxes.Length}");
+            //Debug.Log($"Number of bounding boxes that meet the confidence criteria {boundingBoxes.Length}");
 
             // Filter Bounding Boxes considering overlapping with IOU
             BoundingBox[] filteredBoundingBoxes = FilterBoundingBoxesIoU(boundingBoxes, iouThreshold);
-            Debug.Log($"Number of filtered bounding boxes removing those that considerably overlap {filteredBoundingBoxes.Length}");
+            //Debug.Log($"Number of filtered bounding boxes removing those that considerably overlap {filteredBoundingBoxes.Length}");
 
             // Dispose Tensor Data
             outputTensorSegment0.Dispose();
@@ -61,6 +72,28 @@ namespace DamageSegmentationXR.Utils
             resultsSegment0.Dispose();
             resultsSegment1.Dispose();
             inputTensor.Dispose();
+        }
+
+        // Nicked from https://github.com/Unity-Technologies/barracuda-release/issues/236#issue-1049168663
+        public async Task<(Tensor<float>, Tensor<float>)> ForwardAsync(Worker workerSegment, Tensor<float> inputTensor)
+        {
+            var executor = workerSegment.ScheduleIterable(inputTensor);
+            var it = 0;
+            bool hasMoreWork;
+            do
+            {
+                hasMoreWork = executor.MoveNext();
+                if (++it % 20 == 0)
+                {
+                    await Task.Delay(32);
+                }
+            } while (hasMoreWork);
+
+            // Fetch the two output tensors
+            Tensor<float> outputTensor0 = workerSegment.PeekOutput("output0") as Tensor<float>;
+            Tensor<float> outputTensor1 = workerSegment.PeekOutput("output1") as Tensor<float>;
+
+            return (outputTensor0, outputTensor1);
         }
 
         // Extract bounding boxes that meet with conficenceThreshold criteria
