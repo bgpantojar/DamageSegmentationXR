@@ -8,6 +8,7 @@ using System.Data;
 using System.Threading.Tasks;
 using UnityEngine.Timeline;
 using static UnityEngine.UI.GridLayoutGroup;
+using TMPro;
 
 namespace DamageSegmentationXR.Utils
 {
@@ -32,7 +33,7 @@ namespace DamageSegmentationXR.Utils
         }
 
         //public void ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
-        public async Task ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
+        public async Task<BoundingBox[]> ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
         {
 
             // Convert a texture to a tensor
@@ -61,6 +62,10 @@ namespace DamageSegmentationXR.Utils
             // Extract Bounding Boxes 
             BoundingBox[] boundingBoxes = ExtractBoundingBoxesConfidence(resultsSegment0, classNames, confidenceThreshold);
             //Debug.Log($"Number of bounding boxes that meet the confidence criteria {boundingBoxes.Length}");
+            //foreach (BoundingBox box in boundingBoxes)
+            //{
+            //    Debug.Log($"Initial bbxs. This is a {box.className} located at x {box.x} y {box.y}");                
+            //}
 
             // Filter Bounding Boxes considering overlapping with IOU
             BoundingBox[] filteredBoundingBoxes = FilterBoundingBoxesIoU(boundingBoxes, iouThreshold);
@@ -72,6 +77,8 @@ namespace DamageSegmentationXR.Utils
             resultsSegment0.Dispose();
             resultsSegment1.Dispose();
             inputTensor.Dispose();
+
+            return filteredBoundingBoxes;
         }
 
         // Nicked from https://github.com/Unity-Technologies/barracuda-release/issues/236#issue-1049168663

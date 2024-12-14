@@ -32,6 +32,8 @@ public class GameManager : MonoBehaviour
     public float iouThreshold = 0.4f;
     [SerializeField]
     public TextMeshPro classTextPrefab;
+    private readonly List<TextMeshPro> classTextList = new();
+    private int maxClassTextListSize = 5;
 
     // Start is called before the first frame update
     private async void Start()
@@ -58,53 +60,34 @@ public class GameManager : MonoBehaviour
         var focalLenght = Camera.main.focalLength;
         var horizontalFoV = Camera.main.GetHorizontalFieldOfView();
         var verticalFoV = Camera.main.fieldOfView;
-
-        Debug.Log($"Real image size {realImageSize}. Focal lenght {focalLenght}. FoV (H {horizontalFoV} V {verticalFoV}.");
-        TextMeshPro classText = Instantiate(classTextPrefab);
-        classText.text = $"Real camera size {realImageSize}. Focal lenght {focalLenght}. FoV (H {horizontalFoV} V {verticalFoV}.";
+        //Debug.Log($"Real image size {realImageSize}. Focal lenght {focalLenght}. FoV (H {horizontalFoV} V {verticalFoV}.");
+        //TextMeshPro classText = Instantiate(classTextPrefab);
+        //classText.text = $"Real camera size {realImageSize}. Focal lenght {focalLenght}. FoV (H {horizontalFoV} V {verticalFoV}.";
 
         // Compute camera intrinsics
-        float fx = realImageSize.x / (2 * Mathf.Tan(Mathf.Deg2Rad * horizontalFoV / 2));
-        float fy = realImageSize.y / (2 * Mathf.Tan(Mathf.Deg2Rad * verticalFoV / 2));
-        float cx = realImageSize.x / 2;
-        float cy = realImageSize.y / 2;
-        Debug.Log($"fx {fx}, fy {fy}, cx {cx}, cy {cy}");
+        //float fx = realImageSize.x / (2 * Mathf.Tan(Mathf.Deg2Rad * horizontalFoV / 2));
+        //float fx = realImageSize.x / (2 * Mathf.Tan(Mathf.Deg2Rad * verticalFoV / 2));
+        //float fy = realImageSize.y / (2 * Mathf.Tan(Mathf.Deg2Rad * verticalFoV / 2));
+        //float cx = realImageSize.x / 2;
+        //float cy = realImageSize.y / 2;
+        //Debug.Log($"fx {fx}, fy {fy}, cx {cx}, cy {cy}");
+        //float fx = 1390.0f; // paper
+        //float fy = 1390.0f;
+        //float cx = 1024.0f;
+        //float cy = 540.0f;
+        //float fx = 1246.7f;// based on fmm = 4.87
+        //float fy = 1227.2f;
+        //float cx = 448.0f;
+        //float cy = 252.0f;
+        float fx = 1793.85f;// based on HFOV specs = 64.69
+        float fy = 1793.85f;
+        float cx = 1136.0f;
+        float cy = 639.0f;
 
-        // Assuming x, y detection cordinates.
-        var x = 160;
-        var y = 160;
-        // x and y in the realImage
-        var xImage = ((float)x / (float)yoloInputImageSize.x) * (float)realImageSize.x;
-        var yImage = ((float)y / (float)yoloInputImageSize.y) * (float)realImageSize.y;
-        // Step 1: Normalize image coordinates using intrinsic parameters
-        var xImageNorm = (xImage - cx) / fx;
-        var yImageNorm = (yImage - cy) / fy;
-        // Step 2: Construct the ray direction in camera space
-        Vector3 rayDirCameraSpace = new Vector3(xImageNorm, yImageNorm, 1.0f);
-        rayDirCameraSpace.Normalize(); // Optional, depends on your raycasting method
-        // Step 3: Transform the ray direction to world space
-        var cameraTransformtemp = Camera.main.CopyCameraTransForm();
-        Vector3 rayDirWorldSpace = cameraTransformtemp.rotation * rayDirCameraSpace;
-        Vector3 rayOriginWorldSpace = cameraTransformtemp.position;
-        // Step 4: Cast the ray onto the spatial map
-        Ray ray = new Ray(rayOriginWorldSpace, rayDirWorldSpace);
-        var XYthreeD = Vector3.zero;
-        if (Physics.Raycast(ray, out RaycastHit hitInfo))
-        {
-            XYthreeD = hitInfo.point; // 3D position in space
-        }
-        Debug.Log($"x {x} y {y} xImage {xImage} yImage {yImage} xImageNorm {xImageNorm} yImageNorm {yImageNorm} " +
-            $"rayDirCameraSpace {rayDirCameraSpace} rayDirWorldSpace {rayDirWorldSpace} rayOriginWorldSpace {rayOriginWorldSpace} XYthreeD {XYthreeD}");
-        TextMeshPro classTextRay = Instantiate(classTextPrefab, XYthreeD, Quaternion.identity);
-        classTextRay.text = $"Hit!";
-        classTextRay.transform.LookAt(Camera.main.transform); // Make the text always face the camera
-        classTextRay.transform.Rotate(0, 180, 0); // Invert the text rotation by 180 degrees to make it readable (as LookAt will make it face away)
-        //classText.text = $"3D {XYthreeD}";
-        classText.text = $"x {x} y {y} xImage {xImage} yImage {yImage} xImageNorm {xImageNorm} yImageNorm {yImageNorm} " +
-            $"rayDirCameraSpace {rayDirCameraSpace} rayDirWorldSpace {rayDirWorldSpace} rayOriginWorldSpace {rayOriginWorldSpace} XYthreeD {XYthreeD}";
+        // Spawn temp classText for debugging
+        //TextMeshPro classTextRay = Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
 
         // Create a RenderTexture with the input size of the yolo model
-
         var renderTexture = new RenderTexture(yoloInputImageSize.x, yoloInputImageSize.y, 24);
 
         // Variables to control time to spawn results
@@ -117,24 +100,6 @@ public class GameManager : MonoBehaviour
             cameraTransformPool.Add(Camera.main.CopyCameraTransForm());
             var cameraTransform = cameraTransformPool[^1];
 
-            // Temp ray casting
-            // Step 3: Transform the ray direction to world space
-            Vector3 rayDirWorldSpacet = cameraTransform.rotation * rayDirCameraSpace;
-            Vector3 rayOriginWorldSpacet = cameraTransform.position;
-            // Step 4: Cast the ray onto the spatial map
-            Ray rayt = new Ray(rayOriginWorldSpacet, rayDirWorldSpacet);
-            var XYthreeDt = Vector3.zero;
-            if (Physics.Raycast(rayt, out RaycastHit hitInfot, 10, LayerMask.GetMask("Spatial Mesh")))
-            {
-                XYthreeDt = hitInfot.point; // 3D position in space
-            }
-            Debug.Log($"XYthreeD {XYthreeDt} {count}");
-            classTextRay.transform.position = XYthreeDt;
-            classTextRay.text = $"Hit! {XYthreeDt} {count} {rayDirWorldSpacet} {rayOriginWorldSpacet}";
-            classTextRay.transform.LookAt(cameraTransform); // Make the text always face the camera
-            classTextRay.transform.Rotate(0, 180, 0);
-            count++;
-
             // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
             Graphics.Blit(webCamTexture, renderTexture);
             //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
@@ -145,7 +110,21 @@ public class GameManager : MonoBehaviour
             await Task.Delay(32);
 
             // Execute inference using as inputImage the 2D texture
-            await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
+            BoundingBox[] filteredBoundingBoxes = await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
+            //Debug.Log($"Number of detected objects {filteredBoundingBoxes.Length}");
+            foreach (BoundingBox box in filteredBoundingBoxes) 
+            {
+                // Instantiate classText object
+                //TextMeshPro classText = Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
+                //Debug.Log($"This is a {box.className} located at x {box.x} y {box.y}");
+                //SpawnClassText(box, classText, cameraTransform, realImageSize, focalLenght, fx, fy, cx, cy, count);
+                TextMeshPro classText = SpawnClassText(box, cameraTransform, realImageSize, focalLenght, fx, fy, cx, cy, count);
+                classTextList.Add(classText);
+            }
+
+            // Spawn classText gameObject for the detected object
+            //SpawnClassText(classTextRay, cameraTransform, realImageSize, focalLenght, fx, fy, cx, cy, count, 160f, 160f);
+            //count++;
 
             // Check if it's time to spawn
             //if (Time.time - lastSpawnTime >= spawnInterval)
@@ -165,6 +144,17 @@ public class GameManager : MonoBehaviour
                 Destroy(cameraTransformPool[0].gameObject);
                 cameraTransformPool.RemoveAt(0);
             }
+            //Debug.Log($"Number of spawned classText {classTextList.Count} {classTextList.Count > maxClassTextListSize}");
+            if (classTextList.Count > maxClassTextListSize)
+            {
+                //Debug.Log($"Destroying {classTextList.Count}");
+                for (int i = 0; i < classTextList.Count - maxClassTextListSize; i++)
+                {
+                    Destroy(classTextList[i].gameObject);
+                    classTextList.RemoveAt(i);
+                }
+                //Debug.Log($"Destroyed? {classTextList.Count}");
+            }
         }
     }
 
@@ -181,5 +171,58 @@ public class GameManager : MonoBehaviour
     {
         // Spawn results displayer using stored texture and cameraTransform
         frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform);        
+    }
+
+    //public void SpawnClassText( BoundingBox box, TextMeshPro classText, Transform cameraTransform, Vector2 realImageSize, float focalLenght, float fx, float fy, float cx, float cy, int count)
+    public TextMeshPro SpawnClassText(BoundingBox box, Transform cameraTransform, Vector2 realImageSize, float focalLenght, float fx, float fy, float cx, float cy, int count)
+    {
+        // Flip vertically image coordinates as in the image space the origin is at the top and increases downwards
+        float y = yoloInputImageSize.y - box.y;
+        float x = box.x;
+
+        // Computed x and y in the realImage frame extracted from camera
+        //var xImage = ((float)x / (float)yoloInputImageSize.x) * (float)realImageSize.x;
+        //var yImage = ((float)y / (float)yoloInputImageSize.y) * (float)realImageSize.y;
+        //var xImage = ((float)x / (float)yoloInputImageSize.x) * 1504.0f; //dimensions photo taken with hololens
+        //var yImage = ((float)y / (float)yoloInputImageSize.y) * 846.0f;
+        var xImage = ((float)x / (float)yoloInputImageSize.x) * (2.0f * cx); // paper values
+        var yImage = ((float)y / (float)yoloInputImageSize.y) * (2.0f * cy);
+
+        // Step 1: Normalize image coordinates using intrinsic parameters
+        var xImageNorm = (xImage - cx) / fx;
+        var yImageNorm = (yImage - cy) / fy;
+        //var xImageNorm = (xImage - 752.0f) / fx;
+        //var yImageNorm = (yImage - 423.2f) / fy;
+
+        // Step 2: Construct the ray direction in camera space
+        Vector3 rayDirCameraSpace = new Vector3(xImageNorm, yImageNorm, 1.0f);
+        //Debug.Log($"rayDirCameraSpace {rayDirCameraSpace}");
+        rayDirCameraSpace.Normalize(); // Optional, depends on raycasting method
+        //Debug.Log($"rayDirCameraSpaceNormalized {rayDirCameraSpace}");
+
+        // Step 3: Transform the ray direction to world space
+        Vector3 rayDirWorldSpace = cameraTransform.rotation * rayDirCameraSpace;
+        Vector3 rayOriginWorldSpace = cameraTransform.position;
+        
+        // Step 4: Cast the ray onto the spatial map
+        Ray ray = new Ray(rayOriginWorldSpace, rayDirWorldSpace);
+        var XYthreeD = Vector3.zero;
+        if (Physics.Raycast(ray, out RaycastHit hitInfo)) // this is to test in play mode. Comment to deploy in hololens
+        //if (Physics.Raycast(ray, out RaycastHit hitInfo, 10, LayerMask.GetMask("Spatial Mesh"))) // Uncomment to deploy in hololens
+        //if (Physics.SphereCast(ray, 0.15f, out var hitInfo, 10, LayerMask.GetMask("Spatial Mesh")))
+        {
+            XYthreeD = hitInfo.point; // 3D position in space
+        }
+        Debug.Log($"XYthreeD {XYthreeD} {count}");
+
+        // Instantiate classText object
+        TextMeshPro classText = Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
+        classText.transform.position = XYthreeD;
+        //classText.text = $"Hit! {XYthreeD} {count} {rayDirWorldSpace} {rayOriginWorldSpace}";
+        classText.text = box.className;
+        classText.transform.LookAt(cameraTransform); // Make the text always face the camera
+        classText.transform.Rotate(0, 180, 0);  // Make the text readable left to right
+        
+        return classText;
     }
 }
