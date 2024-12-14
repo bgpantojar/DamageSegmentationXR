@@ -79,10 +79,15 @@ public class GameManager : MonoBehaviour
         //float fy = 1227.2f;
         //float cx = 448.0f;
         //float cy = 252.0f;
-        float fx = 1793.85f;// based on HFOV specs = 64.69
-        float fy = 1793.85f;
-        float cx = 1136.0f;
-        float cy = 639.0f;
+        //float fx = 1793.85f;// based on HFOV specs = 64.69
+        //float fy = 1793.85f;
+        //float cx = 1136.0f;
+        //float cy = 639.0f;
+        float fx = 707.43516390f;// based on HFOV specs = 64.69 and a requested image size
+        float fy = 707.43516390f;
+        float cx = 896.0f/2.0f;
+        float cy = 504.0f/2.0f;
+
 
         // Spawn temp classText for debugging
         //TextMeshPro classTextRay = Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
@@ -173,6 +178,13 @@ public class GameManager : MonoBehaviour
         frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform);        
     }
 
+    // Public method without parameters to be called from UI Button2
+    public void OnButtonClickSpawnResultsDisplayer2()
+    {
+        // Update texture in the input debugger displayer
+        inputDisplayerRenderer.material.mainTexture = storedTexture;
+    }
+
     //public void SpawnClassText( BoundingBox box, TextMeshPro classText, Transform cameraTransform, Vector2 realImageSize, float focalLenght, float fx, float fy, float cx, float cy, int count)
     public TextMeshPro SpawnClassText(BoundingBox box, Transform cameraTransform, Vector2 realImageSize, float focalLenght, float fx, float fy, float cx, float cy, int count)
     {
@@ -185,8 +197,10 @@ public class GameManager : MonoBehaviour
         //var yImage = ((float)y / (float)yoloInputImageSize.y) * (float)realImageSize.y;
         //var xImage = ((float)x / (float)yoloInputImageSize.x) * 1504.0f; //dimensions photo taken with hololens
         //var yImage = ((float)y / (float)yoloInputImageSize.y) * 846.0f;
-        var xImage = ((float)x / (float)yoloInputImageSize.x) * (2.0f * cx); // paper values
-        var yImage = ((float)y / (float)yoloInputImageSize.y) * (2.0f * cy);
+        //var xImage = ((float)x / (float)yoloInputImageSize.x) * (2.0f * cx); // paper values
+        //var yImage = ((float)y / (float)yoloInputImageSize.y) * (2.0f * cy);
+        var xImage = ((float)x / (float)yoloInputImageSize.x) * (float)realImageSize.x; // as computed with spects HFOV and realImageSize requested
+        var yImage = ((float)y / (float)yoloInputImageSize.y) * (float)realImageSize.y;
 
         // Step 1: Normalize image coordinates using intrinsic parameters
         var xImageNorm = (xImage - cx) / fx;

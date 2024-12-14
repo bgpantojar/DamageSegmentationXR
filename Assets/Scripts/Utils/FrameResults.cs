@@ -36,7 +36,8 @@ namespace DamageSegmentationXR.Utils
             Camera camera = Camera.main;
 
             // Set the position of the displayer to the camera's near plane
-            float distanceToNearPlane = camera.nearClipPlane + 1.0f; // Slightly offset to avoid clipping
+            //float distanceToNearPlane = camera.nearClipPlane + 1.0f; // Slightly offset to avoid clipping
+            float distanceToNearPlane = 1.0f; // offset 
             Vector3 positionInFrontOfCamera = camera.transform.position + camera.transform.forward * distanceToNearPlane;
             resultsDisplayerSpawned.transform.position = positionInFrontOfCamera;
 
@@ -52,8 +53,8 @@ namespace DamageSegmentationXR.Utils
             //float quadWidth = quadHeight * camera.aspect;
             //float quadWidth = quadHeight * (1024.0f / 540.0f);
             //float quadWidth = quadHeight * (896.0f / 504.0f);
-            //float quadHeight = quadWidth * (504.0f / 896.0f);
-            float quadHeight = quadWidth * (1278.0f / 2272.0f);
+            float quadHeight = quadWidth * (504.0f / 896.0f);
+            //float quadHeight = quadWidth * (1278.0f / 2272.0f);
             resultsDisplayerSpawned.transform.localScale = new Vector3(quadWidth, quadHeight, 1.0f);
             
 
