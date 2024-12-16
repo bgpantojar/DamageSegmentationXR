@@ -32,6 +32,8 @@ public class GameManager : MonoBehaviour
     public float iouThreshold = 0.4f;
     [SerializeField]
     public TextMeshPro classTextPrefab;
+    private BoxesLabelsThreeD boxesLabelsThreeD;
+    public float HFOV = 64.69f;
     private readonly List<TextMeshPro> classTextList = new();
     private int maxClassTextListSize = 5;
 
@@ -44,6 +46,9 @@ public class GameManager : MonoBehaviour
         // Initialize the ResultDisplayer object
         frameResultsDisplayer = new FrameResults(resultsDisplayerPrefab);
 
+        // Initialize the BoxesLabels3D Object
+        boxesLabelsThreeD = new BoxesLabelsThreeD();
+
         // Access to the device camera image information
         webCamTexture = new WebCamTexture(requestedCameraSize.x, requestedCameraSize.y, cameraFPS);
         webCamTexture.Play();
@@ -55,50 +60,19 @@ public class GameManager : MonoBehaviour
     {
         await Task.Delay(1000);
 
-        // Getting the image dimensions and properties from device camera
+        // Getting the image dimensions and intrinsics from device camera
         var realImageSize = new Vector2Int(webCamTexture.width, webCamTexture.height);
-        var focalLenght = Camera.main.focalLength;
-        var horizontalFoV = Camera.main.GetHorizontalFieldOfView();
-        var verticalFoV = Camera.main.fieldOfView;
-        //Debug.Log($"Real image size {realImageSize}. Focal lenght {focalLenght}. FoV (H {horizontalFoV} V {verticalFoV}.");
-        //TextMeshPro classText = Instantiate(classTextPrefab);
-        //classText.text = $"Real camera size {realImageSize}. Focal lenght {focalLenght}. FoV (H {horizontalFoV} V {verticalFoV}.";
-
-        // Compute camera intrinsics
-        //float fx = realImageSize.x / (2 * Mathf.Tan(Mathf.Deg2Rad * horizontalFoV / 2));
-        //float fx = realImageSize.x / (2 * Mathf.Tan(Mathf.Deg2Rad * verticalFoV / 2));
-        //float fy = realImageSize.y / (2 * Mathf.Tan(Mathf.Deg2Rad * verticalFoV / 2));
-        //float cx = realImageSize.x / 2;
-        //float cy = realImageSize.y / 2;
-        //Debug.Log($"fx {fx}, fy {fy}, cx {cx}, cy {cy}");
-        //float fx = 1390.0f; // paper
-        //float fy = 1390.0f;
-        //float cx = 1024.0f;
-        //float cy = 540.0f;
-        //float fx = 1246.7f;// based on fmm = 4.87
-        //float fy = 1227.2f;
-        //float cx = 448.0f;
-        //float cy = 252.0f;
-        //float fx = 1793.85f;// based on HFOV specs = 64.69
-        //float fy = 1793.85f;
-        //float cx = 1136.0f;
-        //float cy = 639.0f;
-        float fx = 707.43516390f;// based on HFOV specs = 64.69 and a requested image size
-        float fy = 707.43516390f;
-        float cx = 896.0f/2.0f;
-        float cy = 504.0f/2.0f;
-
-
-        // Spawn temp classText for debugging
-        //TextMeshPro classTextRay = Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
-
+        var fv = realImageSize.x / (2 * Mathf.Tan(Mathf.Deg2Rad * HFOV / 2)); // virtual focal lenght assuming the image plane dimensions are realImageSize
+        float cx = realImageSize.x / 2;
+        float cy = realImageSize.y / 2;
+        
         // Create a RenderTexture with the input size of the yolo model
         var renderTexture = new RenderTexture(yoloInputImageSize.x, yoloInputImageSize.y, 24);
 
         // Variables to control time to spawn results
         //float lastSpawnTime = Time.time; // Keep track of the last spawn time
         //float spawnInterval = 5.0f; // Interval to spawn the results displayer
-        var count = 0;
+        int count = 0;
         while (true)
         {
             // Copying transform parameters of the device camera to a Pool
@@ -106,8 +80,8 @@ public class GameManager : MonoBehaviour
             var cameraTransform = cameraTransformPool[^1];
 
             // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
-            Graphics.Blit(webCamTexture, renderTexture);
-            //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
+            //Graphics.Blit(webCamTexture, renderTexture);
+            Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
             await Task.Delay(32);
 
             // Convert RenderTexure to a Texture2D
@@ -116,14 +90,11 @@ public class GameManager : MonoBehaviour
 
             // Execute inference using as inputImage the 2D texture
             BoundingBox[] filteredBoundingBoxes = await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
-            //Debug.Log($"Number of detected objects {filteredBoundingBoxes.Length}");
+            
             foreach (BoundingBox box in filteredBoundingBoxes) 
             {
                 // Instantiate classText object
-                //TextMeshPro classText = Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
-                //Debug.Log($"This is a {box.className} located at x {box.x} y {box.y}");
-                //SpawnClassText(box, classText, cameraTransform, realImageSize, focalLenght, fx, fy, cx, cy, count);
-                TextMeshPro classText = SpawnClassText(box, cameraTransform, realImageSize, focalLenght, fx, fy, cx, cy, count);
+                TextMeshPro classText = boxesLabelsThreeD.SpawnClassText(classTextPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, count);
                 classTextList.Add(classText);
             }
 
@@ -149,16 +120,14 @@ public class GameManager : MonoBehaviour
                 Destroy(cameraTransformPool[0].gameObject);
                 cameraTransformPool.RemoveAt(0);
             }
-            //Debug.Log($"Number of spawned classText {classTextList.Count} {classTextList.Count > maxClassTextListSize}");
+            
             if (classTextList.Count > maxClassTextListSize)
             {
-                //Debug.Log($"Destroying {classTextList.Count}");
                 for (int i = 0; i < classTextList.Count - maxClassTextListSize; i++)
                 {
                     Destroy(classTextList[i].gameObject);
                     classTextList.RemoveAt(i);
-                }
-                //Debug.Log($"Destroyed? {classTextList.Count}");
+                }                
             }
         }
     }
@@ -184,59 +153,5 @@ public class GameManager : MonoBehaviour
         // Update texture in the input debugger displayer
         inputDisplayerRenderer.material.mainTexture = storedTexture;
     }
-
-    //public void SpawnClassText( BoundingBox box, TextMeshPro classText, Transform cameraTransform, Vector2 realImageSize, float focalLenght, float fx, float fy, float cx, float cy, int count)
-    public TextMeshPro SpawnClassText(BoundingBox box, Transform cameraTransform, Vector2 realImageSize, float focalLenght, float fx, float fy, float cx, float cy, int count)
-    {
-        // Flip vertically image coordinates as in the image space the origin is at the top and increases downwards
-        float y = yoloInputImageSize.y - box.y;
-        float x = box.x;
-
-        // Computed x and y in the realImage frame extracted from camera
-        //var xImage = ((float)x / (float)yoloInputImageSize.x) * (float)realImageSize.x;
-        //var yImage = ((float)y / (float)yoloInputImageSize.y) * (float)realImageSize.y;
-        //var xImage = ((float)x / (float)yoloInputImageSize.x) * 1504.0f; //dimensions photo taken with hololens
-        //var yImage = ((float)y / (float)yoloInputImageSize.y) * 846.0f;
-        //var xImage = ((float)x / (float)yoloInputImageSize.x) * (2.0f * cx); // paper values
-        //var yImage = ((float)y / (float)yoloInputImageSize.y) * (2.0f * cy);
-        var xImage = ((float)x / (float)yoloInputImageSize.x) * (float)realImageSize.x; // as computed with spects HFOV and realImageSize requested
-        var yImage = ((float)y / (float)yoloInputImageSize.y) * (float)realImageSize.y;
-
-        // Step 1: Normalize image coordinates using intrinsic parameters
-        var xImageNorm = (xImage - cx) / fx;
-        var yImageNorm = (yImage - cy) / fy;
-        //var xImageNorm = (xImage - 752.0f) / fx;
-        //var yImageNorm = (yImage - 423.2f) / fy;
-
-        // Step 2: Construct the ray direction in camera space
-        Vector3 rayDirCameraSpace = new Vector3(xImageNorm, yImageNorm, 1.0f);
-        //Debug.Log($"rayDirCameraSpace {rayDirCameraSpace}");
-        rayDirCameraSpace.Normalize(); // Optional, depends on raycasting method
-        //Debug.Log($"rayDirCameraSpaceNormalized {rayDirCameraSpace}");
-
-        // Step 3: Transform the ray direction to world space
-        Vector3 rayDirWorldSpace = cameraTransform.rotation * rayDirCameraSpace;
-        Vector3 rayOriginWorldSpace = cameraTransform.position;
-        
-        // Step 4: Cast the ray onto the spatial map
-        Ray ray = new Ray(rayOriginWorldSpace, rayDirWorldSpace);
-        var XYthreeD = Vector3.zero;
-        if (Physics.Raycast(ray, out RaycastHit hitInfo)) // this is to test in play mode. Comment to deploy in hololens
-        //if (Physics.Raycast(ray, out RaycastHit hitInfo, 10, LayerMask.GetMask("Spatial Mesh"))) // Uncomment to deploy in hololens
-        //if (Physics.SphereCast(ray, 0.15f, out var hitInfo, 10, LayerMask.GetMask("Spatial Mesh")))
-        {
-            XYthreeD = hitInfo.point; // 3D position in space
-        }
-        Debug.Log($"XYthreeD {XYthreeD} {count}");
-
-        // Instantiate classText object
-        TextMeshPro classText = Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
-        classText.transform.position = XYthreeD;
-        //classText.text = $"Hit! {XYthreeD} {count} {rayDirWorldSpace} {rayOriginWorldSpace}";
-        classText.text = box.className;
-        classText.transform.LookAt(cameraTransform); // Make the text always face the camera
-        classText.transform.Rotate(0, 180, 0);  // Make the text readable left to right
-        
-        return classText;
-    }
+    
 }
