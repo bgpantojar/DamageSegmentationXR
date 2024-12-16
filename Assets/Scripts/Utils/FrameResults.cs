@@ -37,7 +37,7 @@ namespace DamageSegmentationXR.Utils
 
             // Set the position of the displayer to the camera's near plane
             float distanceToNearPlane = 1.0f; // offset 
-            float distanceCameraEyes = 0.05f; // to spawn the displayer approx at front  of the eyes instead of at front of the camera.
+            float distanceCameraEyes = 0.1f; // to spawn the displayer approx at front  of the eyes instead of at front of the camera.
             Vector3 positionInFrontOfCamera = camera.transform.position + camera.transform.forward * distanceToNearPlane - camera.transform.up * distanceCameraEyes;
             resultsDisplayerSpawned.transform.position = positionInFrontOfCamera;
 

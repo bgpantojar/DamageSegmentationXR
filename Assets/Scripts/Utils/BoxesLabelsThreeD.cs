@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace DamageSegmentationXR.Utils
             
         }
 
-        public TextMeshPro SpawnClassText(TextMeshPro classTextPrefab, Vector2Int yoloInputImageSize, BoundingBox box, Transform cameraTransform, Vector2 realImageSize, float fv, float cx, float cy, int count)
+        public TextMeshPro SpawnClassText(List<TextMeshPro> classTextList, TextMeshPro classTextPrefab, Vector2Int yoloInputImageSize, BoundingBox box, Transform cameraTransform, Vector2 realImageSize, float fv, float cx, float cy, float minSameObjectDistance)
         {
             // Flip vertically image coordinates as in the image space the origin is at the top and increases downwards
             float y = yoloInputImageSize.y - box.y;
@@ -40,20 +41,32 @@ namespace DamageSegmentationXR.Utils
             // Cast the ray onto the spatial map
             Ray ray = new Ray(rayOriginWorldSpace, rayDirWorldSpace);
             var XYthreeD = Vector3.zero;
-            if (Physics.Raycast(ray, out RaycastHit hitInfo)) // this is to test in play mode. Comment to deploy in hololens
-            //if (Physics.Raycast(ray, out RaycastHit hitInfo, 10, LayerMask.GetMask("Spatial Mesh"))) // Uncomment to deploy in hololens. With this rays only hit on Spatial Mesh
+            //if (Physics.Raycast(ray, out RaycastHit hitInfo)) // this is to test in play mode. Comment to deploy in hololens
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, 10, LayerMask.GetMask("Spatial Mesh"))) // Uncomment to deploy in hololens. With this rays only hit on Spatial Mesh
             {
                 XYthreeD = hitInfo.point; // 3D position in space
             }
 
-            // Instantiate classText object
-            TextMeshPro classText = UnityEngine.Object.Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
-            classText.transform.position = XYthreeD;
-            classText.text = box.className;
-            classText.transform.LookAt(cameraTransform); // Make the text always face the camera
-            classText.transform.Rotate(0, 180, 0);  // Make the text readable left to right
+            // Check if the label corresponds to a new Object or to a one already labeled based on a predefined min distance
+            var alreadyLabeled = classTextList.FirstOrDefault(
+                classT => classT.text == box.className &&
+                Vector3.Distance(XYthreeD, classT.transform.position) < minSameObjectDistance);
+            
+            // Instantiate classText object if the object has not been labeled
+            if (!alreadyLabeled)
+            {
+                TextMeshPro classText = UnityEngine.Object.Instantiate(classTextPrefab, classTextPrefab.transform.position, Quaternion.identity);
+                classText.transform.position = XYthreeD;
+                classText.text = box.className;
+                classText.transform.LookAt(cameraTransform); // Make the text always face the camera
+                classText.transform.Rotate(0, 180, 0);  // Make the text readable left to right
 
-            return classText;
+                return classText;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

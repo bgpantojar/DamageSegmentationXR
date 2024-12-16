@@ -36,6 +36,7 @@ public class GameManager : MonoBehaviour
     public float HFOV = 64.69f;
     private readonly List<TextMeshPro> classTextList = new();
     private int maxClassTextListSize = 5;
+    public float minSameObjectDistance = 0.3f;
 
     // Start is called before the first frame update
     private async void Start()
@@ -72,7 +73,6 @@ public class GameManager : MonoBehaviour
         // Variables to control time to spawn results
         //float lastSpawnTime = Time.time; // Keep track of the last spawn time
         //float spawnInterval = 5.0f; // Interval to spawn the results displayer
-        int count = 0;
         while (true)
         {
             // Copying transform parameters of the device camera to a Pool
@@ -80,8 +80,8 @@ public class GameManager : MonoBehaviour
             var cameraTransform = cameraTransformPool[^1];
 
             // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
-            //Graphics.Blit(webCamTexture, renderTexture);
-            Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
+            Graphics.Blit(webCamTexture, renderTexture);
+            //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
             await Task.Delay(32);
 
             // Convert RenderTexure to a Texture2D
@@ -94,13 +94,12 @@ public class GameManager : MonoBehaviour
             foreach (BoundingBox box in filteredBoundingBoxes) 
             {
                 // Instantiate classText object
-                TextMeshPro classText = boxesLabelsThreeD.SpawnClassText(classTextPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, count);
-                classTextList.Add(classText);
+                TextMeshPro classText = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance);
+                if (classText != null)
+                {
+                    classTextList.Add(classText);
+                }
             }
-
-            // Spawn classText gameObject for the detected object
-            //SpawnClassText(classTextRay, cameraTransform, realImageSize, focalLenght, fx, fy, cx, cy, count, 160f, 160f);
-            //count++;
 
             // Check if it's time to spawn
             //if (Time.time - lastSpawnTime >= spawnInterval)
@@ -120,7 +119,7 @@ public class GameManager : MonoBehaviour
                 Destroy(cameraTransformPool[0].gameObject);
                 cameraTransformPool.RemoveAt(0);
             }
-            
+            Debug.Log($"Number of prefab text {classTextList.Count}");
             if (classTextList.Count > maxClassTextListSize)
             {
                 for (int i = 0; i < classTextList.Count - maxClassTextListSize; i++)

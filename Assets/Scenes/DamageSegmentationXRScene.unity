@@ -585,6 +585,7 @@ MonoBehaviour:
   iouThreshold: 0.4
   classTextPrefab: {fileID: 208646407261982571, guid: f4a143970cc3c3e4ebfe486979a02e03, type: 3}
   HFOV: 64.69
+  minSameObjectDistance: 0.3
 --- !u!1 &242076139
 GameObject:
   m_ObjectHideFlags: 0
@@ -1975,7 +1976,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1602239161
 MonoBehaviour:
   m_ObjectHideFlags: 0
