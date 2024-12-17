@@ -37,6 +37,8 @@ public class GameManager : MonoBehaviour
     private readonly List<TextMeshPro> classTextList = new();
     private int maxClassTextListSize = 5;
     public float minSameObjectDistance = 0.3f;
+    public LineRenderer lineRendererPrefab;
+    private readonly List<List<LineRenderer>> lineRendererLists = new(); // List of lists for line renderers
 
     // Start is called before the first frame update
     private async void Start()
@@ -94,10 +96,13 @@ public class GameManager : MonoBehaviour
             foreach (BoundingBox box in filteredBoundingBoxes) 
             {
                 // Instantiate classText object
-                TextMeshPro classText = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance);
+                (TextMeshPro classText, List<LineRenderer> lineRenderers) = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance);                                                                       
+                //TextMeshPro classText = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance);
                 if (classText != null)
                 {
                     classTextList.Add(classText);
+                    //List<LineRenderer> lineRenderers = boxesLabelsThreeD.SpawnClassBox(lineRendererPrefab, cameraTransform, box, yoloInputImageSize, realImageSize, fv, cx, cy);
+                    lineRendererLists.Add(lineRenderers);
                 }
             }
 
@@ -119,13 +124,21 @@ public class GameManager : MonoBehaviour
                 Destroy(cameraTransformPool[0].gameObject);
                 cameraTransformPool.RemoveAt(0);
             }
-            Debug.Log($"Number of prefab text {classTextList.Count}");
+            //Debug.Log($"Number of prefab text {classTextList.Count}");
             if (classTextList.Count > maxClassTextListSize)
             {
                 for (int i = 0; i < classTextList.Count - maxClassTextListSize; i++)
                 {
                     Destroy(classTextList[i].gameObject);
                     classTextList.RemoveAt(i);
+
+                    // Destroy all line renderers associated with this detected object
+                    foreach (var line in lineRendererLists[i])
+                    {
+                        Destroy(line.gameObject);
+                    }
+                    lineRendererLists.RemoveAt(i);
+
                 }                
             }
         }
