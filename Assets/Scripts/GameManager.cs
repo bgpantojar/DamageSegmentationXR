@@ -40,6 +40,8 @@ public class GameManager : MonoBehaviour
     public LineRenderer lineRendererPrefab;
     private readonly List<List<LineRenderer>> lineRendererLists = new(); // List of lists for line renderers
     public float distanceCamEye = 0.08f;
+    private Tensor<float> storedSegmentation;
+    private BoundingBox[] storedfilteredBoundingBoxes;
 
     // Start is called before the first frame update
     private async void Start()
@@ -83,8 +85,8 @@ public class GameManager : MonoBehaviour
             var cameraTransform = cameraTransformPool[^1];
 
             // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
-            Graphics.Blit(webCamTexture, renderTexture);
-            //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
+            //Graphics.Blit(webCamTexture, renderTexture);
+            Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
             await Task.Delay(32);
 
             // Convert RenderTexure to a Texture2D
@@ -92,7 +94,7 @@ public class GameManager : MonoBehaviour
             await Task.Delay(32);
 
             // Execute inference using as inputImage the 2D texture
-            BoundingBox[] filteredBoundingBoxes = await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
+            (BoundingBox[] filteredBoundingBoxes, Tensor<float> segmentation) = await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
             
             foreach (BoundingBox box in filteredBoundingBoxes) 
             {
@@ -115,7 +117,10 @@ public class GameManager : MonoBehaviour
             //}
 
             // Set results data parameters that are callable from OnButtonClick functions
-            SetResultsData(texture, cameraTransform);
+            SetResultsData(texture, cameraTransform, segmentation, filteredBoundingBoxes);
+
+            // Dispose segmentation tensor
+            segmentation.Dispose();
 
             // Destroy the oldest cameraTransform gameObject from the Pool
             if (cameraTransformPool.Count > maxCameraTransformPoolSize)
@@ -137,25 +142,28 @@ public class GameManager : MonoBehaviour
                         Destroy(line.gameObject);
                     }
                     lineRendererLists.RemoveAt(i);
-
                 }                
             }
         }
     }
 
     // Method to store the data needed to call a function without parameters (OnButtonClick)
-    public void SetResultsData(Texture2D texture, Transform cameraTransform)
+    public void SetResultsData(Texture2D texture, Transform cameraTransform, Tensor<float> segmentation, BoundingBox[] filteredBoundingBoxes)
     {
         // Access to texture and cameraTransform info and stored it in variables accessible from OnButtonClick functions
         storedTexture = texture;
         storedCameraTransform = cameraTransform;
+        storedfilteredBoundingBoxes = filteredBoundingBoxes;
+
+        // Clone the segmentation tensor to ensure its values persist and not vanishes to be able to display the segmentation results
+        storedSegmentation = segmentation.ReadbackAndClone();
     }
 
     // Public method without parameters to be called from UI Button
     public void OnButtonClickSpawnResultsDisplayer()
     {
         // Spawn results displayer using stored texture and cameraTransform
-        frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform);        
+        frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform, storedSegmentation, storedfilteredBoundingBoxes);        
     }
 
     // Public method without parameters to be called from UI Button2

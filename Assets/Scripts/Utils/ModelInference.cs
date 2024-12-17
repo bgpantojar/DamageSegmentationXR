@@ -33,7 +33,7 @@ namespace DamageSegmentationXR.Utils
         }
 
         //public void ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
-        public async Task<BoundingBox[]> ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
+        public async Task<(BoundingBox[], Tensor<float>)> ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
         {
 
             // Convert a texture to a tensor
@@ -75,10 +75,10 @@ namespace DamageSegmentationXR.Utils
             outputTensorSegment0.Dispose();
             outputTensorSegment1.Dispose();
             resultsSegment0.Dispose();
-            resultsSegment1.Dispose();
+            //resultsSegment1.Dispose();
             inputTensor.Dispose();
 
-            return filteredBoundingBoxes;
+            return (filteredBoundingBoxes, resultsSegment1);
         }
 
         // Nicked from https://github.com/Unity-Technologies/barracuda-release/issues/236#issue-1049168663
