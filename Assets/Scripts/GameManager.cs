@@ -39,6 +39,7 @@ public class GameManager : MonoBehaviour
     public float minSameObjectDistance = 0.3f;
     public LineRenderer lineRendererPrefab;
     private readonly List<List<LineRenderer>> lineRendererLists = new(); // List of lists for line renderers
+    public float distanceCamEye = 0.08f;
 
     // Start is called before the first frame update
     private async void Start()
@@ -96,12 +97,10 @@ public class GameManager : MonoBehaviour
             foreach (BoundingBox box in filteredBoundingBoxes) 
             {
                 // Instantiate classText object
-                (TextMeshPro classText, List<LineRenderer> lineRenderers) = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance);                                                                       
-                //TextMeshPro classText = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance);
+                (TextMeshPro classText, List<LineRenderer> lineRenderers) = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance, distanceCamEye);                                                                       
                 if (classText != null)
                 {
                     classTextList.Add(classText);
-                    //List<LineRenderer> lineRenderers = boxesLabelsThreeD.SpawnClassBox(lineRendererPrefab, cameraTransform, box, yoloInputImageSize, realImageSize, fv, cx, cy);
                     lineRendererLists.Add(lineRenderers);
                 }
             }
@@ -164,6 +163,5 @@ public class GameManager : MonoBehaviour
     {
         // Update texture in the input debugger displayer
         inputDisplayerRenderer.material.mainTexture = storedTexture;
-    }
-    
+    }    
 }

@@ -591,6 +591,7 @@ MonoBehaviour:
   HFOV: 64.69
   minSameObjectDistance: 0.3
   lineRendererPrefab: {fileID: 655240558678374399, guid: 9ab2da8d61a21014e8957d3e0b9d7852, type: 3}
+  distanceCamEye: 0.08
 --- !u!1 &242076139
 GameObject:
   m_ObjectHideFlags: 0
@@ -1981,7 +1982,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1602239161
 MonoBehaviour:
   m_ObjectHideFlags: 0
