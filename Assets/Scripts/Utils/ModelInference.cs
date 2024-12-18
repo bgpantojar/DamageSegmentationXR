@@ -32,7 +32,6 @@ namespace DamageSegmentationXR.Utils
             classNames.dataSet = "COCO";
         }
 
-        //public void ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
         public async Task<(BoundingBox[], Tensor<float>)> ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)
         {
 

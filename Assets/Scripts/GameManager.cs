@@ -85,8 +85,8 @@ public class GameManager : MonoBehaviour
             var cameraTransform = cameraTransformPool[^1];
 
             // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
-            //Graphics.Blit(webCamTexture, renderTexture);
-            Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
+            Graphics.Blit(webCamTexture, renderTexture);
+            //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
             await Task.Delay(32);
 
             // Convert RenderTexure to a Texture2D

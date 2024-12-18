@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Sentis;
 using UnityEngine;
 
@@ -22,31 +23,25 @@ namespace DamageSegmentationXR.Utils
             Renderer resultsDisplayerSpawned = Object.Instantiate(resultsDisplayerPrefab);
 
             // Draw bounding boxes on texture
-            DrawBoundingBoxes(boundingBoxes, texture);
+            foreach (BoundingBox box in boundingBoxes)
+            {
+                DrawBoundingBox(texture, box.x, box.y, box.width, box.height, box.className, 0.2f, 0.2f, 0.8f);
+            }
+
+            // Overlay segmentation mask
+            texture = GenerateSegmentationMask(texture, boundingBoxes, segmentation);
 
             // Assign texture to the spawned displayer
             resultsDisplayerSpawned.material.mainTexture = texture;
 
-
-            // Set the position of the quad to be 1 unit in front of the camera - temporary
-            //Vector3 positionInFrontOfCamera = cameraTransform.position + cameraTransform.forward * 1.0f;
-            //resultsDisplayerSpawned.transform.position = positionInFrontOfCamera;
-
-            // Make sure the quad faces the camera
-            //resultsDisplayerSpawned.transform.rotation = Quaternion.LookRotation(cameraTransform.forward);
-
-            
-            // Get the camera #! This can inprove I think -- TO REVISIT!!
-            Camera camera = Camera.main;
-
             // Set the position of the displayer to the camera's near plane
             float distanceToNearPlane = 1.0f; // offset image plane 1 unit at front of the camera.
             float distanceCameraEyes = 0.08f; // to spawn the displayer approx at front  of the eyes instead of at front of the camera.
-            Vector3 positionInFrontOfCamera = camera.transform.position + camera.transform.forward * distanceToNearPlane - camera.transform.up * distanceCameraEyes;
+            Vector3 positionInFrontOfCamera = cameraTransform.position + cameraTransform.forward * distanceToNearPlane - cameraTransform.up * distanceCameraEyes;
             resultsDisplayerSpawned.transform.position = positionInFrontOfCamera;
 
             // Align the displayer's rotation with the camera's forward direction
-            resultsDisplayerSpawned.transform.rotation = camera.transform.rotation;
+            resultsDisplayerSpawned.transform.rotation = cameraTransform.rotation;
 
             // Scale the quad to match the camera's field of view
             float quadWidth = 2.0f * distanceToNearPlane * Mathf.Tan(64.69f * 0.5f * Mathf.Deg2Rad); // using HFOV from hololens documentation
@@ -55,21 +50,8 @@ namespace DamageSegmentationXR.Utils
             resultsDisplayerSpawned.transform.localScale = new Vector3(quadWidth, quadHeight, 1.0f);
         }
 
-        void DrawBoundingBoxes(BoundingBox[] boundingBoxes, Texture2D texture)
-        {
-            // Checking outputs
-            foreach (BoundingBox box in boundingBoxes)
-            {
-                //classesString += box.className + " "; // Adding space between detected classes
-                //Debug.Log(box.yoloClassName);
-                DrawBoundingBox(texture, box.x, box.y, box.width, box.height, box.className, 0.2f, 0.2f, 0.8f);
-            }
-        }
-
         public static void DrawBoundingBox(Texture2D texture, float x, float y, float w, float h, string className, float r, float g, float b)
         {
-            //Debug.Log("Hola bbx " + texture);
-            // Convert color components to a Color object
             Color boundingBoxColor = new Color(r, g, b);
 
             // Flip the y-coordinate (Unity texture coordinate system)
@@ -81,7 +63,6 @@ namespace DamageSegmentationXR.Utils
 
             // Calculate the starting position (top-left corner) of the bounding box
             int startX = Mathf.RoundToInt(x - boxWidth / 2);
-            //int startY = Mathf.RoundToInt(y - boxHeight / 2);
             int startY = Mathf.RoundToInt(flippedY - boxHeight / 2);
 
             // Clamp values to ensure they are within the texture bounds
@@ -108,11 +89,9 @@ namespace DamageSegmentationXR.Utils
                 texture.SetPixel(startX + boxWidth - 1, i, boundingBoxColor);
             }
 
-            // Draw class name label at the bottom left of the bounding box
-            int labelX = startX;
-            int labelY = startY + boxHeight - 1;
-
-            //Debug.Log($"This is a {yoloClassName}");
+            // Draw class name label at the center of the bounding box
+            int labelX = startX + (boxWidth / 2);
+            int labelY = startY - 1 + (boxHeight / 2);
             DrawTextOnTexture(texture, className, labelX, labelY, boundingBoxColor);
 
             // Apply the changes to the texture
@@ -144,6 +123,132 @@ namespace DamageSegmentationXR.Utils
                 }
                 x += fontSize + 1; // Move the starting x position for the next character
             }
+        }
+
+        Texture2D GenerateSegmentationMask(Texture2D inputImage, BoundingBox[] boundingBoxes, Tensor<float> segmentation)
+        {
+            // Get the original image dimensions
+            int originalWidth = inputImage.width;
+            int originalHeight = inputImage.height;
+
+            // Extract the segmentation tensor (1, 32, 160, 160)
+            int maskChannels = segmentation.shape[1]; // 32 channels
+            int maskHeight = segmentation.shape[2];   // 160 height
+            int maskWidth = segmentation.shape[3];    // 160 width
+            int numDetections = boundingBoxes.Length ; //detection.shape[2];   // Number of detections
+
+            // Initialize a Texture2D to store the segmentation mask
+            Texture2D maskTexture = new Texture2D(maskWidth, maskHeight, TextureFormat.RGBA32, false);
+            Color[] maskPixels = new Color[maskWidth * maskHeight];
+
+            // Initialize maskPixels with transparency
+            for (int i = 0; i < maskPixels.Length; i++)
+            {
+                maskPixels[i] = new Color(0, 0, 0, 0); // Transparent background
+            }
+
+            // Loop through each detection
+            for (int i = 0; i < numDetections; i++)
+            {
+                // Generate a random color for the object
+                Color objectColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1.0f); // Random RGB with full alpha
+                
+                // Generate the mask for this detection considering the bounding box
+                float[] maskData = new float[maskWidth * maskHeight];
+
+                // Flip bounding box vertically to account for Unity's coordinate system. Need also to make it proporsional to the prediction mask
+                float boxX = (1.0f * maskWidth / originalWidth) * boundingBoxes[i].x;// detection[0, 0, i];  // Center x in segmentation space
+                float boxY = (1.0f * maskHeight / originalHeight) * (originalHeight - boundingBoxes[i].y);//detection[0, 1, i]);  // Center y, flipped
+                float boxW = (1.0f * maskWidth / originalWidth) * boundingBoxes[i].width;// width;//detection[0, 2, i];  // Width
+                float boxH = (1.0f * maskHeight / originalHeight) * boundingBoxes[i].height;// height;// detection[0, 3, i]; // Height
+
+                // Define starting and ending coordinates for rendering masks based on bounding box
+                int startX = Mathf.Clamp(Mathf.RoundToInt(boxX - boxW / 2), 0, maskWidth - 1);
+                int endX = Mathf.Clamp(Mathf.RoundToInt(boxX + boxW / 2), 0, maskWidth - 1);
+                int startY = Mathf.Clamp(Mathf.RoundToInt(boxY - boxH / 2), 0, maskHeight - 1);
+                int endY = Mathf.Clamp(Mathf.RoundToInt(boxY + boxH / 2), 0, maskHeight - 1);
+
+                for (int c = 0; c < maskChannels; c++)
+                {
+                    // Restrict the loops to bounding box limits
+                    for (int y = startY; y <= endY; y++)
+                    {
+                        for (int x = startX; x <= endX; x++)
+                        {
+                            int index = y * maskWidth + x;
+
+                            // Flip vertically: Use (maskHeight - 1 - y) instead of y
+                            maskData[index] += boundingBoxes[i].maskCoefficients[c] * segmentation[0, c, maskHeight - 1 - y, x];
+                        
+                        }
+                    }
+                }
+
+                float maxValueMask = maskData.Max();
+                for (int y = startY; y <= endY; y++)
+                {
+                    for (int x = startX; x <= endX; x++)
+                    {
+                        int index = y * maskWidth + x;
+                        if (Mathf.Clamp01(maskData[index]) > 0.9f) // Threshold to ignore low-confidence mask areas
+                        {
+                            maskPixels[index] = objectColor; // Assign object-specific color
+                        }
+                    }
+                }                
+            }
+
+            // Apply the pixels to the mask texture
+            maskTexture.SetPixels(maskPixels);
+            maskTexture.Apply();
+
+            // Resize the mask to match the original input image dimensions
+            Texture2D resizedMask = ResizeTexture(maskTexture, originalWidth, originalHeight);
+
+            // Overlay the segmentation mask on the original image
+            Texture2D outputTexture = OverlayMask(inputImage, resizedMask);
+            return outputTexture;
+        }
+
+        Texture2D ResizeTexture(Texture2D source, int width, int height)
+        {
+            RenderTexture rt = new RenderTexture(width, height, 24);
+            RenderTexture.active = rt;
+            Graphics.Blit(source, rt);
+
+            Texture2D result = new Texture2D(width, height, source.format, false);
+            result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            result.Apply();
+
+            RenderTexture.active = null;
+            return result;
+        }
+
+        Texture2D OverlayMask(Texture2D original, Texture2D mask)
+        {
+            Texture2D output = new Texture2D(original.width, original.height, TextureFormat.RGBA32, false);
+            Color[] originalPixels = original.GetPixels();
+            Color[] maskPixels = mask.GetPixels();
+            Color[] outputPixels = new Color[originalPixels.Length];
+            //Debug.Log($"MASK ALFA {maskPixels[10].a}");
+            for (int i = 0; i < originalPixels.Length; i++)
+            {
+                // Blend the mask with the original image
+                if (maskPixels[i].a > 0)
+                {
+                    outputPixels[i] = Color.Lerp(originalPixels[i], maskPixels[i], 0.5f);
+                    //Debug.Log("HOLA");
+                }
+                else
+                {
+                    outputPixels[i] = originalPixels[i];
+                }
+
+            }
+
+            output.SetPixels(outputPixels);
+            output.Apply();
+            return output;
         }
 
     }
