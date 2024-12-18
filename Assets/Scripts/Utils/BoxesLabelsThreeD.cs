@@ -14,19 +14,19 @@ namespace DamageSegmentationXR.Utils
         // Constructor to pass dependencies
         public BoxesLabelsThreeD()
         {
-            
+
         }
 
         public (TextMeshPro, List<LineRenderer>) SpawnClassText(List<TextMeshPro> classTextList, TextMeshPro classTextPrefab, LineRenderer lineRendererPrefab, Vector2Int yoloInputImageSize, BoundingBox box, Transform cameraTransform, Vector2 realImageSize, float fv, float cx, float cy, float minSameObjectDistance, float distanceCamEye)
         {
             // Get the coordinate of the bounding box center in 3D space using ray tracing method
-            Vector3 XYthreeD = getXYThreeD(cameraTransform, box.x, box.y, yoloInputImageSize, realImageSize, fv, cx, cy);     
+            Vector3 XYthreeD = getXYThreeD(cameraTransform, box.x, box.y, yoloInputImageSize, realImageSize, fv, cx, cy);
 
             // Check if the label corresponds to a new Object or to a one already labeled based on a predefined min distance
             var alreadyLabeled = classTextList.FirstOrDefault(
                 classT => classT.text == box.className &&
                 Vector3.Distance(XYthreeD, classT.transform.position) < minSameObjectDistance);
-            
+
             // Instantiate classText object if the object has not been labeled
             if (!alreadyLabeled)
             {
@@ -49,7 +49,7 @@ namespace DamageSegmentationXR.Utils
 
         public Vector3 getXYThreeD(Transform cameraTransform, float bx, float by, Vector2 yoloInputImageSize, Vector2 realImageSize, float fv, float cx, float cy, float distanceCamEye = 0.08f, bool isBox = false)
         {
-            
+
 
             // Flip vertically image coordinates as in the image space the origin is at the top and increases downwards
             float y = yoloInputImageSize.y - by;
@@ -66,8 +66,8 @@ namespace DamageSegmentationXR.Utils
 
             if (isBox)
             {
-                // Project the bounding box to a plane places 1m at front of the camera and corrected vertically by the distance between eye and camera
-                Vector3 coordPlanefvat1WorldSpace = cameraTransform.position + nfv * cameraTransform.forward + cameraTransform.right * xImageNorm + cameraTransform.up * yImageNorm - cameraTransform.up * distanceCamEye;
+                // Project the bounding box to a plane places 1.05m at front of the camera and corrected vertically by the distance between eye and camera. 1.05 to avoid overlapping with ResultsDisplayer
+                Vector3 coordPlanefvat1WorldSpace = cameraTransform.position + 1.05f * nfv * cameraTransform.forward + 1.05f * cameraTransform.right * xImageNorm + 1.05f * cameraTransform.up * yImageNorm - cameraTransform.up * distanceCamEye;
                 return coordPlanefvat1WorldSpace;
             }
             else
@@ -78,7 +78,7 @@ namespace DamageSegmentationXR.Utils
 
                 // Transform the ray direction to world space
                 Vector3 rayDirWorldSpace = cameraTransform.rotation * rayDirCameraSpace;
-            
+
                 // Camera origin
                 Vector3 rayOriginWorldSpace = cameraTransform.position;
 
@@ -94,7 +94,7 @@ namespace DamageSegmentationXR.Utils
             }
         }
 
-            public List<LineRenderer> SpawnClassBox(LineRenderer lineRendererPrefab, Transform cameraTransform, BoundingBox box, Vector2 yoloInputImageSize, Vector2 realImageSize, float fv, float cx, float cy, float distanceCamEye)
+        public List<LineRenderer> SpawnClassBox(LineRenderer lineRendererPrefab, Transform cameraTransform, BoundingBox box, Vector2 yoloInputImageSize, Vector2 realImageSize, float fv, float cx, float cy, float distanceCamEye)
         {
             // Get 2D coordinates of the bounding box corners
             float roundPixel = 1.0f; // To help avoiding detections outside image plane
@@ -102,7 +102,7 @@ namespace DamageSegmentationXR.Utils
             Vector2 topRight = new Vector2(box.x + (box.width / 2) - roundPixel, box.y - (box.height / 2) + roundPixel);
             Vector2 bottomRight = new Vector2(box.x + (box.width / 2) - roundPixel, box.y + (box.height / 2) - roundPixel);
             Vector2 bottomLeft = new Vector2(box.x - (box.width / 2) + roundPixel, box.y + (box.height / 2) - roundPixel);
-            
+
             // Get the coordinate of the bounding box corners in 3D space using ray tracing method
             var positionInSpaceTopLeft = getXYThreeD(cameraTransform, topLeft.x, topLeft.y, yoloInputImageSize, realImageSize, fv, cx, cy, distanceCamEye, true);
             var positionInSpaceTopRight = getXYThreeD(cameraTransform, topRight.x, topRight.y, yoloInputImageSize, realImageSize, fv, cx, cy, distanceCamEye, true);
@@ -111,7 +111,7 @@ namespace DamageSegmentationXR.Utils
 
             // Build Vector3 with bounding box corners
             Vector3[] boundingBoxCorners3D = new Vector3[] { positionInSpaceTopLeft, positionInSpaceTopRight, positionInSpaceBottomRight, positionInSpaceBottomLeft, positionInSpaceTopLeft };
-            
+
             List<LineRenderer> lineRenderers = new List<LineRenderer>();
 
             // Spawn bounding box line

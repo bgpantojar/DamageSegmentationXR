@@ -8,7 +8,7 @@ namespace DamageSegmentation.Utils
     {
         public string dataSet;
         public string GetName(int classIndex)
-        {            
+        {
             return detectableObjectsCOCO[classIndex];
         }
 

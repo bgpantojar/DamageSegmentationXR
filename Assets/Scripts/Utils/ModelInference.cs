@@ -8,7 +8,6 @@ using System.Data;
 using System.Threading.Tasks;
 using UnityEngine.Timeline;
 using static UnityEngine.UI.GridLayoutGroup;
-using TMPro;
 
 namespace DamageSegmentationXR.Utils
 {
@@ -46,7 +45,7 @@ namespace DamageSegmentationXR.Utils
             //Debug.Log("Got the detection outputTensor0" + outputTensorSegment0);
             //Tensor<float> outputTensorSegment1 = workerSegment.PeekOutput("output1") as Tensor<float>;
             //Debug.Log("Got the segmentation outputTensor1" + outputTensorSegment1);
-
+            
             await Task.Delay(32);
 
             // Run the model with the inpuTensor using the ForwadAsync.
@@ -76,7 +75,7 @@ namespace DamageSegmentationXR.Utils
             resultsSegment0.Dispose();
             //resultsSegment1.Dispose();
             inputTensor.Dispose();
-
+            
             return (filteredBoundingBoxes, resultsSegment1);
         }
 
@@ -108,7 +107,7 @@ namespace DamageSegmentationXR.Utils
             // Get the number of attributes and number of bounding boxes output by the model
             int numAttributes = result.shape[1]; // 116 attributes per box x, y, w, h, 80p, 32c
             int numBoxes = result.shape[2]; // 2100 predicted boxes for yolo11n-seg-320
-                                           
+
             // Create empty list to store the extracted bounding boxes that meet confidenceThreshold requirement
             List<BoundingBox> boxes = new List<BoundingBox>();
 
@@ -164,7 +163,7 @@ namespace DamageSegmentationXR.Utils
                     boxes.Add(box);
                 }
             }
-            
+
             // Dispose tensor
             result.Dispose();
 

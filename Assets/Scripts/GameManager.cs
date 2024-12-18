@@ -10,7 +10,7 @@ using Unity.XR.CoreUtils;
 
 public class GameManager : MonoBehaviour
 {
-    private WebCamTexture webCamTexture;    
+    private WebCamTexture webCamTexture;
     [SerializeField]
     private Vector2Int requestedCameraSize = new(896, 504);
     [SerializeField]
@@ -71,7 +71,7 @@ public class GameManager : MonoBehaviour
         var fv = realImageSize.x / (2 * Mathf.Tan(Mathf.Deg2Rad * HFOV / 2)); // virtual focal lenght assuming the image plane dimensions are realImageSize
         float cx = realImageSize.x / 2;
         float cy = realImageSize.y / 2;
-        
+
         // Create a RenderTexture with the input size of the yolo model
         var renderTexture = new RenderTexture(yoloInputImageSize.x, yoloInputImageSize.y, 24);
 
@@ -95,11 +95,11 @@ public class GameManager : MonoBehaviour
 
             // Execute inference using as inputImage the 2D texture
             (BoundingBox[] filteredBoundingBoxes, Tensor<float> segmentation) = await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
-            
-            foreach (BoundingBox box in filteredBoundingBoxes) 
+
+            foreach (BoundingBox box in filteredBoundingBoxes)
             {
                 // Instantiate classText object
-                (TextMeshPro classText, List<LineRenderer> lineRenderers) = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance, distanceCamEye);                                                                       
+                (TextMeshPro classText, List<LineRenderer> lineRenderers) = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance, distanceCamEye);
                 if (classText != null)
                 {
                     classTextList.Add(classText);
@@ -142,7 +142,8 @@ public class GameManager : MonoBehaviour
                         Destroy(line.gameObject);
                     }
                     lineRendererLists.RemoveAt(i);
-                }                
+
+                }
             }
         }
     }
@@ -163,7 +164,7 @@ public class GameManager : MonoBehaviour
     public void OnButtonClickSpawnResultsDisplayer()
     {
         // Spawn results displayer using stored texture and cameraTransform
-        frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform, storedSegmentation, storedfilteredBoundingBoxes);        
+        frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform, storedSegmentation, storedfilteredBoundingBoxes);
     }
 
     // Public method without parameters to be called from UI Button2
@@ -171,5 +172,6 @@ public class GameManager : MonoBehaviour
     {
         // Update texture in the input debugger displayer
         inputDisplayerRenderer.material.mainTexture = storedTexture;
-    }    
+    }
+
 }

@@ -46,7 +46,7 @@ namespace DamageSegmentationXR.Utils
             // Scale the quad to match the camera's field of view
             float quadWidth = 2.0f * distanceToNearPlane * Mathf.Tan(64.69f * 0.5f * Mathf.Deg2Rad); // using HFOV from hololens documentation
             float quadHeight = quadWidth * (504.0f / 896.0f);
-            
+
             resultsDisplayerSpawned.transform.localScale = new Vector3(quadWidth, quadHeight, 1.0f);
         }
 
@@ -135,7 +135,7 @@ namespace DamageSegmentationXR.Utils
             int maskChannels = segmentation.shape[1]; // 32 channels
             int maskHeight = segmentation.shape[2];   // 160 height
             int maskWidth = segmentation.shape[3];    // 160 width
-            int numDetections = boundingBoxes.Length ; //detection.shape[2];   // Number of detections
+            int numDetections = boundingBoxes.Length; //detection.shape[2];   // Number of detections
 
             // Initialize a Texture2D to store the segmentation mask
             Texture2D maskTexture = new Texture2D(maskWidth, maskHeight, TextureFormat.RGBA32, false);
@@ -152,7 +152,7 @@ namespace DamageSegmentationXR.Utils
             {
                 // Generate a random color for the object
                 Color objectColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1.0f); // Random RGB with full alpha
-                
+
                 // Generate the mask for this detection considering the bounding box
                 float[] maskData = new float[maskWidth * maskHeight];
 
@@ -179,7 +179,7 @@ namespace DamageSegmentationXR.Utils
 
                             // Flip vertically: Use (maskHeight - 1 - y) instead of y
                             maskData[index] += boundingBoxes[i].maskCoefficients[c] * segmentation[0, c, maskHeight - 1 - y, x];
-                        
+
                         }
                     }
                 }
@@ -195,7 +195,7 @@ namespace DamageSegmentationXR.Utils
                             maskPixels[index] = objectColor; // Assign object-specific color
                         }
                     }
-                }                
+                }
             }
 
             // Apply the pixels to the mask texture

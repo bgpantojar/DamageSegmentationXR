@@ -6,9 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/DamageSegmentationXRScene.unity
-    guid: 7cd063a32357d5240911fccc89609b75
+    path: Assets/Scenes/DamageSegmentationScene.unity
+    guid: bdbb5d17925145441863d13cf90438ec
   m_configObjects:
-    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 1de3db7603aeae34db5074e2ca818c73, type: 2}
-    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 341ef9f4f389e824cbfd283d4c2fc275, type: 2}
-    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: bd23646be32d93d49a55d1f7b61d896e, type: 2}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: ccf60b2de310fdc44aac89ac5ef99657, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 40bf090b911791249993c79aef5efb32, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 96ebddffcfd36094cac51901184fe19b, type: 2}

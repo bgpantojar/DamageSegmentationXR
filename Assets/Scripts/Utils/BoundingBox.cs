@@ -10,7 +10,6 @@ namespace DamageSegmentationXR.Utils
         public float y { get; set; }       // y coordinate of the box
         public float width { get; set; }   // Width of the box
         public float height { get; set; }  // Height of the box
-        public float confidence { get; set; } // Confidence score of the box
         public int classIndex { get; set; }   // Class index with the highest probability
         public string className { get; set; } // Name of the class using class map
         public float classProbability { get; set; } // class probability of the predicted class (highest probability)
