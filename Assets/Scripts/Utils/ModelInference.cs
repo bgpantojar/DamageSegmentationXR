@@ -18,7 +18,7 @@ namespace DamageSegmentationXR.Utils
         private Worker workerSegment;
 
         // Constructor to pass dependencies
-        public ModelInference(ModelAsset modelAsset)
+        public ModelInference(ModelAsset modelAsset, string dataSet)
         {
             // Load model
             runtimeModel = ModelLoader.Load(modelAsset);
@@ -28,7 +28,7 @@ namespace DamageSegmentationXR.Utils
 
             // Initialize yoloClassNames
             classNames = new DictionaryClassNames();
-            classNames.dataSet = "COCO";
+            classNames.dataSet = dataSet;
         }
 
         public async Task<(BoundingBox[], Tensor<float>)> ExecuteInference(Texture2D inputImage, float confidenceThreshold, float iouThreshold)

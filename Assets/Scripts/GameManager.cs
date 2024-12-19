@@ -43,12 +43,27 @@ public class GameManager : MonoBehaviour
     private Tensor<float> storedSegmentation;
     private BoundingBox[] storedfilteredBoundingBoxes;
     private bool enableInference = false; // Default value to start inference
+    public enum DataSet
+    {
+        COCO,
+        Cracks
+    }
+    public DataSet selectedDataSet;
 
     // Start is called before the first frame update
     private async void Start()
     {
         // Initialize the ModelInference object
-        modelInference = new ModelInference(modelAsset);
+        string dataSet="";
+        if (selectedDataSet == DataSet.COCO)
+        {
+            dataSet = "COCO";
+        }
+        else if (selectedDataSet == DataSet.Cracks)
+        {
+            dataSet = "cracks";
+        }
+        modelInference = new ModelInference(modelAsset, dataSet);
 
         // Initialize the ResultDisplayer object
         frameResultsDisplayer = new FrameResults(resultsDisplayerPrefab);
@@ -173,7 +188,7 @@ public class GameManager : MonoBehaviour
     public void OnButtonClickSpawnResultsDisplayer()
     {
         // Spawn results displayer using stored texture and cameraTransform
-        frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform, storedSegmentation, storedfilteredBoundingBoxes);
+        frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform, storedSegmentation, storedfilteredBoundingBoxes, distanceCamEye, HFOV);
     }
 
     // Public method  to be called from UI Button - Destroying last ResultsDisplayer

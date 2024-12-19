@@ -9,7 +9,19 @@ namespace DamageSegmentation.Utils
         public string dataSet;
         public string GetName(int classIndex)
         {
-            return detectableObjectsCOCO[classIndex];
+            if (dataSet == "COCO")
+            {
+                return detectableObjectsCOCO[classIndex];
+            }
+            else if (dataSet == "cracks")
+            {
+                return detectableObjectsCracks[classIndex];
+            }
+            else
+            {
+                return null;
+            }
+
         }
 
         private static List<string> detectableObjectsCOCO = new()
@@ -95,5 +107,10 @@ namespace DamageSegmentation.Utils
             "Hair drier",
             "Toothbrush"
         };
+
+        private static List<string> detectableObjectsCracks = new()
+            {
+                "crack"
+            };
     }
 }

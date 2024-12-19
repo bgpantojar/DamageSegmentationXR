@@ -22,7 +22,7 @@ namespace DamageSegmentationXR.Utils
         }
 
         // Method to spawn results displayer
-        public void SpawnResultsDisplayer(Texture2D texture, Transform cameraTransform, Tensor<float> segmentation, BoundingBox[] boundingBoxes)
+        public void SpawnResultsDisplayer(Texture2D texture, Transform cameraTransform, Tensor<float> segmentation, BoundingBox[] boundingBoxes, float distanceCameraEyes, float HFOV)
         {
             // Instantiate Results Displayer prefab
             Renderer resultsDisplayerSpawned = Object.Instantiate(resultsDisplayerPrefab);
@@ -40,8 +40,8 @@ namespace DamageSegmentationXR.Utils
             resultsDisplayerSpawned.material.mainTexture = texture;
 
             // Set the position of the displayer to the camera's near plane
-            float distanceToNearPlane = 0.9f; // offset image plane 0.9 unit at front of the camera (not 1 to avoid overlap with 3D boxes).
-            float distanceCameraEyes = 0.08f; // to spawn the displayer approx at front  of the eyes instead of at front of the camera.
+            float distanceToNearPlane = 1.0f; // offset image plane 0.9 unit at front of the camera (not 1 to avoid overlap with 3D boxes).
+            //float distanceCameraEyes = 0.08f; // to spawn the displayer approx at front  of the eyes instead of at front of the camera.
             Vector3 positionInFrontOfCamera = cameraTransform.position + cameraTransform.forward * distanceToNearPlane - cameraTransform.up * distanceCameraEyes;
             resultsDisplayerSpawned.transform.position = positionInFrontOfCamera;
 
@@ -49,8 +49,8 @@ namespace DamageSegmentationXR.Utils
             resultsDisplayerSpawned.transform.rotation = cameraTransform.rotation;
 
             // Scale the quad to match the camera's field of view
-            float quadWidth = 2.0f * distanceToNearPlane * Mathf.Tan(64.69f * 0.5f * Mathf.Deg2Rad); // using HFOV from hololens documentation
-            float quadHeight = quadWidth * (504.0f / 896.0f);
+            float quadWidth = 2.0f * distanceToNearPlane * Mathf.Tan(HFOV * 0.5f * Mathf.Deg2Rad); // using HFOV from hololens documentation
+            float quadHeight = quadWidth * (9.0f / 16.0f);
 
             resultsDisplayerSpawned.transform.localScale = new Vector3(quadWidth, quadHeight, 1.0f);
 
