@@ -42,6 +42,7 @@ public class GameManager : MonoBehaviour
     public float distanceCamEye = 0.08f;
     private Tensor<float> storedSegmentation;
     private BoundingBox[] storedfilteredBoundingBoxes;
+    private bool enableInference = false; // Default value to start inference
 
     // Start is called before the first frame update
     private async void Start()
@@ -80,70 +81,78 @@ public class GameManager : MonoBehaviour
         //float spawnInterval = 5.0f; // Interval to spawn the results displayer
         while (true)
         {
-            // Copying transform parameters of the device camera to a Pool
-            cameraTransformPool.Add(Camera.main.CopyCameraTransForm());
-            var cameraTransform = cameraTransformPool[^1];
-
-            // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
-            Graphics.Blit(webCamTexture, renderTexture);
-            //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
-            await Task.Delay(32);
-
-            // Convert RenderTexure to a Texture2D
-            var texture = renderTexture.ToTexture2D();
-            await Task.Delay(32);
-
-            // Execute inference using as inputImage the 2D texture
-            (BoundingBox[] filteredBoundingBoxes, Tensor<float> segmentation) = await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
-
-            foreach (BoundingBox box in filteredBoundingBoxes)
+            if (enableInference) // Perform inference only if enabled
             {
-                // Instantiate classText object
-                (TextMeshPro classText, List<LineRenderer> lineRenderers) = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance, distanceCamEye);
-                if (classText != null)
+                // Copying transform parameters of the device camera to a Pool
+                cameraTransformPool.Add(Camera.main.CopyCameraTransForm());
+                var cameraTransform = cameraTransformPool[^1];
+
+                // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
+                //Graphics.Blit(webCamTexture, renderTexture);
+                Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
+                await Task.Delay(32);
+
+                // Convert RenderTexure to a Texture2D
+                var texture = renderTexture.ToTexture2D();
+                await Task.Delay(32);
+
+                // Execute inference using as inputImage the 2D texture
+                (BoundingBox[] filteredBoundingBoxes, Tensor<float> segmentation) = await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
+
+                foreach (BoundingBox box in filteredBoundingBoxes)
                 {
-                    classTextList.Add(classText);
-                    lineRendererLists.Add(lineRenderers);
-                }
-            }
-
-            // Check if it's time to spawn
-            //if (Time.time - lastSpawnTime >= spawnInterval)
-            //{
-            //    lastSpawnTime = Time.time; // Reset the timer
-            //
-            //    // Spawn results displayer
-            //    frameResultsDisplayer.SpawnResultsDisplayer(texture, cameraTransform);
-            //}
-
-            // Set results data parameters that are callable from OnButtonClick functions
-            SetResultsData(texture, cameraTransform, segmentation, filteredBoundingBoxes);
-
-            // Dispose segmentation tensor
-            segmentation.Dispose();
-
-            // Destroy the oldest cameraTransform gameObject from the Pool
-            if (cameraTransformPool.Count > maxCameraTransformPoolSize)
-            {
-                Destroy(cameraTransformPool[0].gameObject);
-                cameraTransformPool.RemoveAt(0);
-            }
-            //Debug.Log($"Number of prefab text {classTextList.Count}");
-            if (classTextList.Count > maxClassTextListSize)
-            {
-                for (int i = 0; i < classTextList.Count - maxClassTextListSize; i++)
-                {
-                    Destroy(classTextList[i].gameObject);
-                    classTextList.RemoveAt(i);
-
-                    // Destroy all line renderers associated with this detected object
-                    foreach (var line in lineRendererLists[i])
+                    // Instantiate classText object
+                    (TextMeshPro classText, List<LineRenderer> lineRenderers) = boxesLabelsThreeD.SpawnClassText(classTextList, classTextPrefab, lineRendererPrefab, yoloInputImageSize, box, cameraTransform, realImageSize, fv, cx, cy, minSameObjectDistance, distanceCamEye);
+                    if (classText != null)
                     {
-                        Destroy(line.gameObject);
+                        classTextList.Add(classText);
+                        lineRendererLists.Add(lineRenderers);
                     }
-                    lineRendererLists.RemoveAt(i);
-
                 }
+
+                // Check if it's time to spawn
+                //if (Time.time - lastSpawnTime >= spawnInterval)
+                //{
+                //    lastSpawnTime = Time.time; // Reset the timer
+                //
+                //    // Spawn results displayer
+                //    frameResultsDisplayer.SpawnResultsDisplayer(texture, cameraTransform);
+                //}
+
+                // Set results data parameters that are callable from OnButtonClick functions
+                SetResultsData(texture, cameraTransform, segmentation, filteredBoundingBoxes);
+
+                // Dispose segmentation tensor
+                segmentation.Dispose();
+
+                // Destroy the oldest cameraTransform gameObject from the Pool
+                if (cameraTransformPool.Count > maxCameraTransformPoolSize)
+                {
+                    Destroy(cameraTransformPool[0].gameObject);
+                    cameraTransformPool.RemoveAt(0);
+                }
+                //Debug.Log($"Number of prefab text {classTextList.Count}");
+                if (classTextList.Count > maxClassTextListSize)
+                {
+                    for (int i = 0; i < classTextList.Count - maxClassTextListSize; i++)
+                    {
+                        Destroy(classTextList[i].gameObject);
+                        classTextList.RemoveAt(i);
+
+                        // Destroy all line renderers associated with this detected object
+                        foreach (var line in lineRendererLists[i])
+                        {
+                            Destroy(line.gameObject);
+                        }
+                        lineRendererLists.RemoveAt(i);
+
+                    }
+                }
+            }
+            else
+            {
+                // Wait before checking again to avoid a tight loop
+                await Task.Delay(100);
             }
         }
     }
@@ -165,6 +174,25 @@ public class GameManager : MonoBehaviour
     {
         // Spawn results displayer using stored texture and cameraTransform
         frameResultsDisplayer.SpawnResultsDisplayer(storedTexture, storedCameraTransform, storedSegmentation, storedfilteredBoundingBoxes);
+    }
+
+    // Public method  to be called from UI Button - Destroying last ResultsDisplayer
+    public void OnButtonClickDestroyResultsDisplayer()
+    {
+        frameResultsDisplayer.DestroyLastResultsDisplayer();
+    }
+
+    // Public method  to be called from UI Button - locate last ResultsDisplayer in a grid array
+    public void OnButtonClickLocateResultsDisplayer()
+    {
+        frameResultsDisplayer.LocateLastResultsDisplayerInGrid();
+    }
+
+    // Public method to toggle the inference process
+    public void ToggleInference(bool isEnabled)
+    {
+        enableInference = isEnabled;
+        Debug.Log($"enableInference {enableInference}");
     }
 
     // Public method without parameters to be called from UI Button2

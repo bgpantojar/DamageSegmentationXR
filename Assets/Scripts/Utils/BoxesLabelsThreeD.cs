@@ -66,8 +66,8 @@ namespace DamageSegmentationXR.Utils
 
             if (isBox)
             {
-                // Project the bounding box to a plane places 1.05m at front of the camera and corrected vertically by the distance between eye and camera. 1.05 to avoid overlapping with ResultsDisplayer
-                Vector3 coordPlanefvat1WorldSpace = cameraTransform.position + 1.05f * nfv * cameraTransform.forward + 1.05f * cameraTransform.right * xImageNorm + 1.05f * cameraTransform.up * yImageNorm - cameraTransform.up * distanceCamEye;
+                // Project the bounding box to a plane places 1m at front of the camera and corrected vertically by the distance between eye and camera
+                Vector3 coordPlanefvat1WorldSpace = cameraTransform.position + nfv * cameraTransform.forward + cameraTransform.right * xImageNorm + cameraTransform.up * yImageNorm - cameraTransform.up * distanceCamEye;
                 return coordPlanefvat1WorldSpace;
             }
             else
@@ -85,8 +85,8 @@ namespace DamageSegmentationXR.Utils
                 // Cast the ray onto the spatial map
                 Ray ray = new Ray(rayOriginWorldSpace, rayDirWorldSpace);
                 var XYthreeD = Vector3.zero;
-                //if (Physics.Raycast(ray, out RaycastHit hitInfo)) // this is to test in play mode. Comment to deploy in hololens
-                if (Physics.Raycast(ray, out RaycastHit hitInfo, 10, LayerMask.GetMask("Spatial Mesh"))) // Uncomment to deploy in hololens. With this rays only hit on Spatial Mesh
+                if (Physics.Raycast(ray, out RaycastHit hitInfo)) // this is to test in play mode. Comment to deploy in hololens
+                //if (Physics.Raycast(ray, out RaycastHit hitInfo, 10, LayerMask.GetMask("Spatial Mesh"))) // Uncomment to deploy in hololens. With this rays only hit on Spatial Mesh
                 {
                     XYthreeD = hitInfo.point; // 3D position in space
                 }

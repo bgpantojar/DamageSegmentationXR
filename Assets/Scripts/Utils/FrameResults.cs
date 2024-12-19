@@ -9,6 +9,11 @@ namespace DamageSegmentationXR.Utils
     public class FrameResults
     {
         private Renderer resultsDisplayerPrefab;
+        private Vector3 gridOrigin = new Vector3(0.0f, 2.0f, 1.0f); // Starting position of the grid
+        private Vector3 gridSpacing = new Vector3(0.1978f, 0.12f, 0.2f); // Spacing between grid cells        
+        private int gridColumns = 3; // Number of columns in the grid
+        private List<Renderer> resultsDisplayers = new List<Renderer>(); // List to track spawned ResultsDisplayers
+        private int currentGridIndex = 0; // Index to track the next position in the grid
 
         // Constructor to pass dependencies
         public FrameResults(Renderer prefab)
@@ -35,7 +40,7 @@ namespace DamageSegmentationXR.Utils
             resultsDisplayerSpawned.material.mainTexture = texture;
 
             // Set the position of the displayer to the camera's near plane
-            float distanceToNearPlane = 1.0f; // offset image plane 1 unit at front of the camera.
+            float distanceToNearPlane = 0.9f; // offset image plane 0.9 unit at front of the camera (not 1 to avoid overlap with 3D boxes).
             float distanceCameraEyes = 0.08f; // to spawn the displayer approx at front  of the eyes instead of at front of the camera.
             Vector3 positionInFrontOfCamera = cameraTransform.position + cameraTransform.forward * distanceToNearPlane - cameraTransform.up * distanceCameraEyes;
             resultsDisplayerSpawned.transform.position = positionInFrontOfCamera;
@@ -48,6 +53,8 @@ namespace DamageSegmentationXR.Utils
             float quadHeight = quadWidth * (504.0f / 896.0f);
 
             resultsDisplayerSpawned.transform.localScale = new Vector3(quadWidth, quadHeight, 1.0f);
+
+            resultsDisplayers.Add(resultsDisplayerSpawned);
         }
 
         public static void DrawBoundingBox(Texture2D texture, float x, float y, float w, float h, string className, float r, float g, float b)
@@ -249,6 +256,50 @@ namespace DamageSegmentationXR.Utils
             output.SetPixels(outputPixels);
             output.Apply();
             return output;
+        }
+
+        // Destroy the last spawned ResultsDisplayer
+        public void DestroyLastResultsDisplayer()
+        {
+            if (resultsDisplayers.Count > 0)
+            {
+                Renderer lastDisplayer = resultsDisplayers[^1];
+                Object.Destroy(lastDisplayer.gameObject);
+                resultsDisplayers.RemoveAt(resultsDisplayers.Count - 1);
+            }
+            else
+            {
+                Debug.LogWarning("No ResultsDisplayers to destroy.");
+            }
+        }
+
+        // Locate the last ResultsDisplayer in the grid
+        public void LocateLastResultsDisplayerInGrid()
+        {
+            if (resultsDisplayers.Count > 0)
+            {
+                Renderer lastDisplayer = resultsDisplayers[^1];
+
+                // Calculate grid position
+                int row = currentGridIndex / gridColumns;
+                int col = currentGridIndex % gridColumns;
+
+                // Calculate position in the grid
+                Vector3 gridPosition = gridOrigin +
+                                       new Vector3(col * gridSpacing.x, row * gridSpacing.y, 0);
+
+                // Update the ResultsDisplayer's position and scale
+                lastDisplayer.transform.position = gridPosition;
+                lastDisplayer.transform.localScale = new Vector3(0.1778f, 0.1f, lastDisplayer.transform.localScale.z); //10% of spawned Scale\
+                lastDisplayer.transform.rotation = Quaternion.identity;
+
+                // Move to the next grid position
+                currentGridIndex++;
+            }
+            else
+            {
+                Debug.LogWarning("No ResultsDisplayers to locate in the grid.");
+            }
         }
 
     }
