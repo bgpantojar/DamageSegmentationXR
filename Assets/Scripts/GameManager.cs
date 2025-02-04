@@ -7,6 +7,7 @@ using Unity.Sentis;
 using System.Linq;
 using TMPro;
 using Unity.XR.CoreUtils;
+using System.IO;
 
 public class GameManager : MonoBehaviour
 {
@@ -49,10 +50,25 @@ public class GameManager : MonoBehaviour
         Cracks
     }
     public DataSet selectedDataSet;
+    [SerializeField]
+    private TextMeshPro performanceText;
+    private string logFilePath;
 
     // Start is called before the first frame update
     private async void Start()
     {
+        // Ensure the "Documents" directory exists
+        string documentsPath = Application.persistentDataPath + "/Documents/";
+        if (!Directory.Exists(documentsPath))
+        {
+            Directory.CreateDirectory(documentsPath);
+        }
+
+        // Generate a timestamped filename for each session
+        string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss"); // e.g., 20240203_153045
+        logFilePath = documentsPath + $"performance_log_{modelAsset.name}_{timestamp}.txt";
+        //performanceText.text = $"logFilePath: {logFilePath}";
+
         // Initialize the ModelInference object
         string dataSet="";
         if (selectedDataSet == DataSet.COCO)
@@ -98,6 +114,8 @@ public class GameManager : MonoBehaviour
         {
             if (enableInference) // Perform inference only if enabled
             {
+                float fullLoopStartTime = Time.realtimeSinceStartup; // Start full loop timer
+
                 // Copying transform parameters of the device camera to a Pool
                 cameraTransformPool.Add(Camera.main.CopyCameraTransForm());
                 var cameraTransform = cameraTransformPool[^1];
@@ -112,7 +130,9 @@ public class GameManager : MonoBehaviour
                 await Task.Delay(32);
 
                 // Execute inference using as inputImage the 2D texture
+                float inferenceStartTime = Time.realtimeSinceStartup; // Start inference timer
                 (BoundingBox[] filteredBoundingBoxes, Tensor<float> segmentation) = await modelInference.ExecuteInference(texture, confidenceThreshold, iouThreshold);
+                float inferenceTime = Time.realtimeSinceStartup - inferenceStartTime; // Inference duration
 
                 foreach (BoundingBox box in filteredBoundingBoxes)
                 {
@@ -163,6 +183,14 @@ public class GameManager : MonoBehaviour
 
                     }
                 }
+
+                float fullLoopTime = Time.realtimeSinceStartup - fullLoopStartTime; // Full loop duration
+
+                // Log to file
+                LogPerformance(inferenceTime, fullLoopTime);
+
+                // Display TimeDebug results
+                performanceText.text = $"Inference: {inferenceTime:F4}s\nFull Loop: {fullLoopTime:F4}s";
             }
             else
             {
@@ -215,6 +243,18 @@ public class GameManager : MonoBehaviour
     {
         // Update texture in the input debugger displayer
         inputDisplayerRenderer.material.mainTexture = storedTexture;
+    }
+    private void LogPerformance(float inferenceTime, float fullLoopTime)
+    {
+        using (StreamWriter writer = new StreamWriter(logFilePath, true)) // Append mode
+        {
+            string logEntry = $"{System.DateTime.Now:yyyy-MM-dd HH:mm:ss} - " +
+                              $"Model: {modelAsset.name}, Input Size: {yoloInputImageSize.x}x{yoloInputImageSize.y}, " +
+                              $"Inference Time: {inferenceTime:F4} sec, Full Loop Time: {fullLoopTime:F4} sec";
+            writer.WriteLine(logEntry);
+        }
+
+        Debug.Log($"Logged Performance - {logFilePath}");
     }
 
 }

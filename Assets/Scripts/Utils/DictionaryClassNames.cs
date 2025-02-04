@@ -109,8 +109,8 @@ namespace DamageSegmentation.Utils
         };
 
         private static List<string> detectableObjectsCracks = new()
-            {
-                "crack"
-            };
+        {
+            "crack"
+        };
     }
 }
