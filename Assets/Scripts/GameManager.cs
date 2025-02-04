@@ -53,6 +53,8 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private TextMeshPro performanceText;
     private string logFilePath;
+    private string currentInspectionFolder;
+    private bool enableTimeLog = false;
 
     // Start is called before the first frame update
     private async void Start()
@@ -64,10 +66,23 @@ public class GameManager : MonoBehaviour
             Directory.CreateDirectory(documentsPath);
         }
 
-        // Generate a timestamped filename for each session
-        string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss"); // e.g., 20240203_153045
-        logFilePath = documentsPath + $"performance_log_{modelAsset.name}_{timestamp}.txt";
-        //performanceText.text = $"logFilePath: {logFilePath}";
+        // Create inspection folder         
+        // Look for existing folders whose names start with "inspection_"
+        var directories = Directory.GetDirectories(documentsPath, "inspection_*");
+        int nextId = directories.Length + 1;
+        string inspectionID = "inspection_" + nextId;
+        currentInspectionFolder = Path.Combine(documentsPath, inspectionID);
+        Directory.CreateDirectory(currentInspectionFolder);
+        Debug.Log("Created inspection folder: " + currentInspectionFolder);
+
+
+        // Generate a timestamped filename for each session if enableTimeLog is true
+        if (enableTimeLog)
+        {
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss"); // e.g., 20240203_153045
+            logFilePath = currentInspectionFolder + $"/performance_log_{modelAsset.name}_{timestamp}.txt";
+            //performanceText.text = $"logFilePath: {logFilePath}";
+        }
 
         // Initialize the ModelInference object
         string dataSet="";
@@ -83,6 +98,10 @@ public class GameManager : MonoBehaviour
 
         // Initialize the ResultDisplayer object
         frameResultsDisplayer = new FrameResults(resultsDisplayerPrefab);
+
+        // Pass folder information to the FrameResults instance so that it can save files there.
+        frameResultsDisplayer.InspectionFolderPath = currentInspectionFolder;
+        frameResultsDisplayer.InspectionID = inspectionID;
 
         // Initialize the BoxesLabels3D Object
         boxesLabelsThreeD = new BoxesLabelsThreeD();
@@ -121,8 +140,8 @@ public class GameManager : MonoBehaviour
                 var cameraTransform = cameraTransformPool[^1];
 
                 // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
-                //Graphics.Blit(webCamTexture, renderTexture);
-                Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
+                Graphics.Blit(webCamTexture, renderTexture);
+                //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
                 await Task.Delay(32);
 
                 // Convert RenderTexure to a Texture2D
@@ -186,11 +205,16 @@ public class GameManager : MonoBehaviour
 
                 float fullLoopTime = Time.realtimeSinceStartup - fullLoopStartTime; // Full loop duration
 
-                // Log to file
-                LogPerformance(inferenceTime, fullLoopTime);
+                // Log to file if ebableTimeLog is true
+                if (enableTimeLog)
+                {
+                    LogPerformance(inferenceTime, fullLoopTime);
 
-                // Display TimeDebug results
-                performanceText.text = $"Inference: {inferenceTime:F4}s\nFull Loop: {fullLoopTime:F4}s";
+                    // Display TimeDebug results
+                    performanceText.text = $"Inference: {inferenceTime:F4}s\nFull Loop: {fullLoopTime:F4}s";
+                }
+
+                
             }
             else
             {
@@ -236,6 +260,7 @@ public class GameManager : MonoBehaviour
     {
         enableInference = isEnabled;
         Debug.Log($"enableInference {enableInference}");
+        
     }
 
     // Public method without parameters to be called from UI Button2

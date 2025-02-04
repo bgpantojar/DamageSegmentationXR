@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Unity.Sentis;
 using UnityEngine;
@@ -14,6 +15,8 @@ namespace DamageSegmentationXR.Utils
         private int gridColumns = 3; // Number of columns in the grid
         private List<Renderer> resultsDisplayers = new List<Renderer>(); // List to track spawned ResultsDisplayers
         private int currentGridIndex = 0; // Index to track the next position in the grid
+        public string InspectionFolderPath { get; set; }
+        public string InspectionID { get; set; }
 
         // Constructor to pass dependencies
         public FrameResults(Renderer prefab)
@@ -280,13 +283,15 @@ namespace DamageSegmentationXR.Utils
             {
                 Renderer lastDisplayer = resultsDisplayers[^1];
 
+                // Save the image and transform information before relocating the displayer.
+                SaveResultsDisplayerData(lastDisplayer);
+
                 // Calculate grid position
                 int row = currentGridIndex / gridColumns;
                 int col = currentGridIndex % gridColumns;
 
                 // Calculate position in the grid
-                Vector3 gridPosition = gridOrigin +
-                                       new Vector3(col * gridSpacing.x, row * gridSpacing.y, 0);
+                Vector3 gridPosition = gridOrigin + new Vector3(col * gridSpacing.x, row * gridSpacing.y, 0);
 
                 // Update the ResultsDisplayer's position and scale
                 lastDisplayer.transform.position = gridPosition;
@@ -300,6 +305,49 @@ namespace DamageSegmentationXR.Utils
             {
                 Debug.LogWarning("No ResultsDisplayers to locate in the grid.");
             }
+        }
+
+        private void SaveResultsDisplayerData(Renderer displayer)
+        {
+            // Get current timestamp for file naming (e.g., "20240203_153045")
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            // Compose the filename: "inspectionID_timestamp"
+            string fileName = InspectionID + "_" + timestamp;
+
+            // Make sure InspectionFolderPath is set
+            if (string.IsNullOrEmpty(InspectionFolderPath))
+            {
+                Debug.LogError("InspectionFolderPath is not set.");
+                return;
+            }
+
+            // Build full file paths for the image and text files
+            string imagePath = Path.Combine(InspectionFolderPath, fileName + ".jpg");
+            string textPath = Path.Combine(InspectionFolderPath, fileName + ".txt");
+
+            // Retrieve the texture from the displayer's material.
+            Texture2D texture = displayer.material.mainTexture as Texture2D;
+            if (texture == null)
+            {
+                Debug.LogError("Results displayer material does not contain a Texture2D.");
+                return;
+            }
+
+            // Encode the texture to JPG format and write the file.
+            byte[] jpgBytes = texture.EncodeToJPG();
+            File.WriteAllBytes(imagePath, jpgBytes);
+            Debug.Log("Saved image to: " + imagePath);
+
+            // Extract the transform data (position, rotation, and scale)
+            Vector3 pos = displayer.transform.position;
+            Vector3 scale = displayer.transform.localScale;
+            Quaternion rot = displayer.transform.rotation;
+
+            // Build a string with the transform information.
+            string transformInfo = $"Position: {pos}\nRotation: {rot.eulerAngles}\nScale: {scale}";
+            File.WriteAllText(textPath, transformInfo);
+            Debug.Log("Saved transform info to: " + textPath);
         }
 
     }
