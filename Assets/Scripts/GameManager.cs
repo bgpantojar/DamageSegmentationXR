@@ -56,7 +56,7 @@ public class GameManager : MonoBehaviour
     private string currentInspectionFolder;
     private bool enableTimeLog = false;
     private List<PreviousInspection> loadedInspections = new List<PreviousInspection>(); // List to track loaded previous inspections.
-
+    
     // Start is called before the first frame update
     private async void Start()
     {
@@ -75,7 +75,6 @@ public class GameManager : MonoBehaviour
         currentInspectionFolder = Path.Combine(documentsPath, inspectionID);
         Directory.CreateDirectory(currentInspectionFolder);
         //Debug.Log("Created inspection folder: " + currentInspectionFolder);
-
 
         // Generate a timestamped filename for each session if enableTimeLog is true
         if (enableTimeLog)
