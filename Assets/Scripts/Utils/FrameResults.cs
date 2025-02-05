@@ -100,9 +100,9 @@ namespace DamageSegmentationXR.Utils
             }
 
             // Draw class name label at the center of the bounding box
-            int labelX = startX + (boxWidth / 2);
-            int labelY = startY - 1 + (boxHeight / 2);
-            DrawTextOnTexture(texture, className, labelX, labelY, boundingBoxColor);
+            //int labelX = startX + (boxWidth / 2);
+            //int labelY = startY - 1 + (boxHeight / 2);
+            //DrawTextOnTexture(texture, className, labelX, labelY, boundingBoxColor);
 
             // Apply the changes to the texture
             texture.Apply();
@@ -337,7 +337,7 @@ namespace DamageSegmentationXR.Utils
             // Encode the texture to JPG format and write the file.
             byte[] jpgBytes = texture.EncodeToJPG();
             File.WriteAllBytes(imagePath, jpgBytes);
-            Debug.Log("Saved image to: " + imagePath);
+            //Debug.Log("Saved image to: " + imagePath);
 
             // Extract the transform data (position, rotation, and scale)
             Vector3 pos = displayer.transform.position;
@@ -347,7 +347,7 @@ namespace DamageSegmentationXR.Utils
             // Build a string with the transform information.
             string transformInfo = $"Position: {pos}\nRotation: {rot.eulerAngles}\nScale: {scale}";
             File.WriteAllText(textPath, transformInfo);
-            Debug.Log("Saved transform info to: " + textPath);
+            //Debug.Log("Saved transform info to: " + textPath);
         }
 
     }

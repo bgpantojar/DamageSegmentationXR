@@ -55,6 +55,7 @@ public class GameManager : MonoBehaviour
     private string logFilePath;
     private string currentInspectionFolder;
     private bool enableTimeLog = false;
+    private List<PreviousInspection> loadedInspections = new List<PreviousInspection>(); // List to track loaded previous inspections.
 
     // Start is called before the first frame update
     private async void Start()
@@ -73,7 +74,7 @@ public class GameManager : MonoBehaviour
         string inspectionID = "inspection_" + nextId;
         currentInspectionFolder = Path.Combine(documentsPath, inspectionID);
         Directory.CreateDirectory(currentInspectionFolder);
-        Debug.Log("Created inspection folder: " + currentInspectionFolder);
+        //Debug.Log("Created inspection folder: " + currentInspectionFolder);
 
 
         // Generate a timestamped filename for each session if enableTimeLog is true
@@ -259,7 +260,7 @@ public class GameManager : MonoBehaviour
     public void ToggleInference(bool isEnabled)
     {
         enableInference = isEnabled;
-        Debug.Log($"enableInference {enableInference}");
+        //Debug.Log($"enableInference {enableInference}");
         
     }
 
@@ -279,7 +280,46 @@ public class GameManager : MonoBehaviour
             writer.WriteLine(logEntry);
         }
 
-        Debug.Log($"Logged Performance - {logFilePath}");
+        //Debug.Log($"Logged Performance - {logFilePath}");
+    }
+
+    
+    // Methods to load previous inspections.
+    // Called from a UI button. The parameter "inspectionIndex" (0 to 3) corresponds to one of the four buttons.
+    public void OnButtonClickLoadInspection(int inspectionIndex)
+    {
+        // Get all inspection folders from Documents.
+        string documentsPath = Application.persistentDataPath + "/Documents/";
+        var inspectionDirs = Directory.GetDirectories(documentsPath, "inspection_*")
+                                      .OrderByDescending(d => d) 
+                                      .ToList();
+
+        // We want to load one of the last four inspections.
+        if (inspectionIndex < inspectionDirs.Count)
+        {
+            string folderPath = inspectionDirs[inspectionIndex+1];
+            //Debug.Log($"folder Path Previous inspection {folderPath}");
+            string inspectionID = Path.GetFileName(folderPath);
+
+            // Create a new PreviousInspection object.
+            PreviousInspection pi = new PreviousInspection(folderPath, inspectionID, resultsDisplayerPrefab);
+            pi.LoadInspection();
+            loadedInspections.Add(pi);
+        }
+        else
+        {
+            Debug.LogError("No inspection folder available for index " + inspectionIndex);
+        }
+    }
+
+    // Called from a UI button to destroy all loaded previous inspections.
+    public void OnButtonClickDestroyPreviousInspections()
+    {
+        foreach (var pi in loadedInspections)
+        {
+            pi.DestroyInspection();
+        }
+        loadedInspections.Clear();
     }
 
 }
