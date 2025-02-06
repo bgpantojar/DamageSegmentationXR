@@ -7,15 +7,23 @@ public class PreviousInspection
     public string InspectionFolder { get; private set; }
     public string InspectionID { get; private set; }
     private Renderer resultsDisplayerPrefab;
+    private string currentInspectionFolder;                   // Folder for current inspection
+
+    // QR transform variables
+    private Vector3 previousQRPosition = Vector3.zero;
+    private Quaternion previousQRRotation = Quaternion.identity;
+    private Vector3 currentQRPosition = Vector3.zero;
+    private Quaternion currentQRRotation = Quaternion.identity;
 
     // List to hold references to spawned quad GameObjects.
     private List<GameObject> spawnedQuads = new List<GameObject>();
 
-    public PreviousInspection(string folderPath, string inspectionID, Renderer prefab)
+    public PreviousInspection(string folderPath, string inspectionID, string currentInspectionFolder, Renderer prefab)
     {
         InspectionFolder = folderPath;
         InspectionID = inspectionID;
         resultsDisplayerPrefab = prefab;
+        this.currentInspectionFolder = currentInspectionFolder;
     }
 
     
@@ -24,6 +32,16 @@ public class PreviousInspection
     // For each pair, it instantiates a quad, sets the texture, and applies the transform.
     public void LoadInspection()
     {
+        // Get QR transforms from previous and current inspections.
+        if (!TryGetQRTransform(InspectionFolder, out previousQRPosition, out previousQRRotation))
+        {
+            Debug.LogWarning("No QR transform found in previous inspection folder: " + InspectionFolder);
+        }
+        if (!TryGetQRTransform(currentInspectionFolder, out currentQRPosition, out currentQRRotation))
+        {
+            Debug.LogWarning("No QR transform found in current inspection folder: " + currentInspectionFolder);
+        }
+
         // Get all JPG files in the inspection folder.
         string[] imageFiles = Directory.GetFiles(InspectionFolder, "*.jpg");
 
@@ -98,9 +116,26 @@ public class PreviousInspection
                 }
 
                 // Apply the saved transform information.
-                quadRenderer.transform.position = position;
-                quadRenderer.transform.rotation = Quaternion.Euler(rotationEuler);
-                quadRenderer.transform.localScale = scale;
+                //quadRenderer.transform.position = position;
+                //quadRenderer.transform.rotation = Quaternion.Euler(rotationEuler);
+                //quadRenderer.transform.localScale = scale;
+
+                // Convert saved rotation to quaternion.
+                Quaternion rotation = Quaternion.Euler(rotationEuler);
+
+                // Compute relative transform with respect to previous QR.
+                Vector3 relativePosition = Quaternion.Inverse(previousQRRotation) * (position - previousQRPosition);
+                Quaternion relativeRotation = Quaternion.Inverse(previousQRRotation) * rotation;
+
+                // Compute new transform relative to current QR.
+                Vector3 newPosition = currentQRPosition + currentQRRotation * relativePosition;
+                Quaternion newRotation = currentQRRotation * relativeRotation;
+                Vector3 newScale = scale;
+
+                // Apply computed transform.
+                quadRenderer.transform.position = newPosition;
+                quadRenderer.transform.rotation = newRotation;
+                quadRenderer.transform.localScale = newScale;
             }
             else
             {
@@ -119,5 +154,50 @@ public class PreviousInspection
             Object.Destroy(quad);
         }
         spawnedQuads.Clear();
+    }
+
+    // Tries to read a QR transform (position and rotation) from a folder.
+    // Expects a file starting with "QRCodeData_" containing lines like:
+    // "Position: (x, y, z)" and "Rotation: (x, y, z)"
+    private bool TryGetQRTransform(string folder, out Vector3 pos, out Quaternion rot)
+    {
+        pos = Vector3.zero;
+        rot = Quaternion.identity;
+        string[] qrFiles = Directory.GetFiles(folder, "QRCodeData_*.txt");
+        if (qrFiles.Length > 0)
+        {
+            // Use the first QR file found.
+            string content = File.ReadAllText(qrFiles[0]);
+            string[] lines = content.Split('\n');
+            foreach (string line in lines)
+            {
+                if (line.StartsWith("Position:"))
+                {
+                    string posData = line.Replace("Position:", "").Replace("(", "").Replace(")", "");
+                    string[] posValues = posData.Split(',');
+                    if (posValues.Length >= 3)
+                    {
+                        float.TryParse(posValues[0], out float px);
+                        float.TryParse(posValues[1], out float py);
+                        float.TryParse(posValues[2], out float pz);
+                        pos = new Vector3(px, py, pz);
+                    }
+                }
+                else if (line.StartsWith("Rotation:"))
+                {
+                    string rotData = line.Replace("Rotation:", "").Replace("(", "").Replace(")", "");
+                    string[] rotValues = rotData.Split(',');
+                    if (rotValues.Length >= 3)
+                    {
+                        float.TryParse(rotValues[0], out float rx);
+                        float.TryParse(rotValues[1], out float ry);
+                        float.TryParse(rotValues[2], out float rz);
+                        rot = Quaternion.Euler(new Vector3(rx, ry, rz));
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }
