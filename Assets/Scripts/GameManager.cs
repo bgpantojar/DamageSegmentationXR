@@ -119,6 +119,7 @@ public class GameManager : MonoBehaviour
 
         // Getting the image dimensions and intrinsics from device camera
         var realImageSize = new Vector2Int(webCamTexture.width, webCamTexture.height);
+        //performanceText.text = $"image size: {realImageSize}";
         var fv = realImageSize.x / (2 * Mathf.Tan(Mathf.Deg2Rad * HFOV / 2)); // virtual focal lenght assuming the image plane dimensions are realImageSize
         float cx = realImageSize.x / 2;
         float cy = realImageSize.y / 2;
@@ -140,8 +141,8 @@ public class GameManager : MonoBehaviour
                 var cameraTransform = cameraTransformPool[^1];
 
                 // Copying pixel data from webCamTexture to a RenderTexture - Resize the texture to the input size
-                //Graphics.Blit(webCamTexture, renderTexture);
-                Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
+                Graphics.Blit(webCamTexture, renderTexture);
+                //Graphics.Blit(inputDisplayerRenderer.material.mainTexture, renderTexture); //use this for debugging. comment this for building the app
                 await Task.Delay(32);
 
                 // Convert RenderTexure to a Texture2D

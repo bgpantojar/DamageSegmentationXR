@@ -122,6 +122,8 @@ public class PreviousInspection
 
                 // Convert saved rotation to quaternion.
                 Quaternion rotation = Quaternion.Euler(rotationEuler);
+                //Debug.Log($"euler {rotationEuler}");
+                //Debug.Log($"quaternion {rotation}");
 
                 // Compute relative transform with respect to previous QR.
                 Vector3 relativePosition = Quaternion.Inverse(previousQRRotation) * (position - previousQRPosition);

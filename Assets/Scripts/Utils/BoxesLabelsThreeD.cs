@@ -85,8 +85,8 @@ namespace DamageSegmentationXR.Utils
                 // Cast the ray onto the spatial map
                 Ray ray = new Ray(rayOriginWorldSpace, rayDirWorldSpace);
                 var XYthreeD = Vector3.zero;
-                if (Physics.Raycast(ray, out RaycastHit hitInfo)) // this is to test in play mode. Comment to deploy in hololens
-                //if (Physics.Raycast(ray, out RaycastHit hitInfo, 10, LayerMask.GetMask("Spatial Mesh"))) // Uncomment to deploy in hololens. With this rays only hit on Spatial Mesh
+                //if (Physics.Raycast(ray, out RaycastHit hitInfo)) // this is to test in play mode. Comment to deploy in hololens
+                if (Physics.Raycast(ray, out RaycastHit hitInfo, 10, LayerMask.GetMask("Spatial Mesh"))) // Uncomment to deploy in hololens. With this rays only hit on Spatial Mesh
                 {
                     XYthreeD = hitInfo.point; // 3D position in space
                 }

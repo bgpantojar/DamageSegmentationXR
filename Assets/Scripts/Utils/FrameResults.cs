@@ -200,7 +200,8 @@ namespace DamageSegmentationXR.Utils
                     for (int x = startX; x <= endX; x++)
                     {
                         int index = y * maskWidth + x;
-                        if (Mathf.Clamp01(maskData[index]) > 0.9f) // Threshold to ignore low-confidence mask areas
+                        //if (Mathf.Clamp01(maskData[index]) > 0.9f) // Threshold to ignore low-confidence mask areas
+                        if (1/(1+Mathf.Exp(-maskData[index])) > 0.5f) // Threshold to ignore low-confidence mask areas using sigmoid to get probabilities
                         {
                             maskPixels[index] = objectColor; // Assign object-specific color
                         }

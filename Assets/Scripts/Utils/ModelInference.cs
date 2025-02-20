@@ -36,6 +36,7 @@ namespace DamageSegmentationXR.Utils
 
             // Convert a texture to a tensor
             Tensor<float> inputTensor = TextureConverter.ToTensor(inputImage);
+            //Debug.Log("The inputTensor" + inputTensor);
 
             // To run the model, use the schedule method
             //workerSegment.Schedule(inputTensor);
@@ -45,7 +46,7 @@ namespace DamageSegmentationXR.Utils
             //Debug.Log("Got the detection outputTensor0" + outputTensorSegment0);
             //Tensor<float> outputTensorSegment1 = workerSegment.PeekOutput("output1") as Tensor<float>;
             //Debug.Log("Got the segmentation outputTensor1" + outputTensorSegment1);
-            
+
             await Task.Delay(32);
 
             // Run the model with the inpuTensor using the ForwadAsync.
