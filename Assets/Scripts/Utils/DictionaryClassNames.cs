@@ -17,6 +17,26 @@ namespace DamageSegmentation.Utils
             {
                 return detectableObjectsCracks[classIndex];
             }
+            else if (dataSet == "spalling")
+            {
+                return detectableObjectsSpalling[classIndex];
+            }
+            else if (dataSet == "rust")
+            {
+                return detectableObjectsRust[classIndex];
+            }
+            else if (dataSet == "efflorescence")
+            {
+                return detectableObjectsEfflorescence[classIndex];
+            }
+            else if (dataSet == "exposedrebars")
+            {
+                return detectableObjectsExposedRebars[classIndex];
+            }
+            else if (dataSet == "fivedamages")
+            {
+                return detectableObjectsFiveDamages[classIndex];
+            }
             else
             {
                 return null;
@@ -111,6 +131,35 @@ namespace DamageSegmentation.Utils
         private static List<string> detectableObjectsCracks = new()
         {
             "crack"
+        };
+
+        private static List<string> detectableObjectsSpalling = new()
+        {
+            "spalling"
+        };
+
+        private static List<string> detectableObjectsRust = new()
+        {
+            "rust"
+        };
+
+        private static List<string> detectableObjectsEfflorescence = new()
+        {
+            "efflorescence"
+        };
+
+        private static List<string> detectableObjectsExposedRebars = new()
+        {
+            "exposedrebars"
+        };
+
+        private static List<string> detectableObjectsFiveDamages = new()
+        {
+            "crack",
+            "spalling",
+            "rust",
+            "efflorescence",
+            "exposedrebars"
         };
     }
 }

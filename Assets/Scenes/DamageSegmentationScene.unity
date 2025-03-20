@@ -669,7 +669,7 @@ MonoBehaviour:
   yoloInputImageSize: {x: 320, y: 320}
   resultsDisplayerPrefab: {fileID: 4283496450569273627, guid: ae4c55d784d934e4cb6111b3ceb0b822, type: 3}
   inputDisplayerRenderer: {fileID: 1701294679}
-  modelAsset: {fileID: 5022602860645237092, guid: a118c8f69a821f94a9eb1f8d3d116c4a, type: 3}
+  modelAsset: {fileID: 5022602860645237092, guid: f2078bc093afccc419e3690cc248b6f5, type: 3}
   confidenceThreshold: 0.2
   iouThreshold: 0.4
   classTextPrefab: {fileID: 2288683862207190159, guid: 896dea43fdd505243bfb1e0790b465a7, type: 3}
@@ -677,7 +677,7 @@ MonoBehaviour:
   minSameObjectDistance: 0.3
   lineRendererPrefab: {fileID: 50320357298972735, guid: e1dade888c27c6d47a2951ed6272c968, type: 3}
   distanceCamEye: 0.08
-  selectedDataSet: 0
+  selectedDataSet: 6
   performanceText: {fileID: 1884966862}
 --- !u!1001 &1183715897
 PrefabInstance:
@@ -2393,7 +2393,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1884966862
 MonoBehaviour:
   m_ObjectHideFlags: 0

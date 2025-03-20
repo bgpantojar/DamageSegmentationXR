@@ -47,14 +47,19 @@ public class GameManager : MonoBehaviour
     public enum DataSet
     {
         COCO,
-        Cracks
+        Cracks,
+        Spalling,
+        Rust,
+        Efflorescence,
+        ExposedRebars,
+        FiveDamages
     }
     public DataSet selectedDataSet;
     [SerializeField]
     private TextMeshPro performanceText;
     private string logFilePath;
     private string currentInspectionFolder;
-    private bool enableTimeLog = false;
+    private bool enableTimeLog = true;
     private List<PreviousInspection> loadedInspections = new List<PreviousInspection>(); // List to track loaded previous inspections.
     
     // Start is called before the first frame update
@@ -93,6 +98,26 @@ public class GameManager : MonoBehaviour
         else if (selectedDataSet == DataSet.Cracks)
         {
             dataSet = "cracks";
+        }
+        else if (selectedDataSet == DataSet.Spalling)
+        {
+            dataSet = "spalling";
+        }
+        else if (selectedDataSet == DataSet.Rust)
+        {
+            dataSet = "rust";
+        }
+        else if (selectedDataSet == DataSet.Efflorescence)
+        {
+            dataSet = "efflorescence";
+        }
+        else if (selectedDataSet == DataSet.ExposedRebars)
+        {
+            dataSet = "exposedrebars";
+        }
+        else if (selectedDataSet == DataSet.FiveDamages)
+        {
+            dataSet = "fivedamages";
         }
         modelInference = new ModelInference(modelAsset, dataSet);
 
