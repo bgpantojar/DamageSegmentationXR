@@ -28,7 +28,15 @@ public class GameManager : MonoBehaviour
     private Texture2D storedTexture;
     private Transform storedCameraTransform;
     private ModelInference modelInference;
-    public ModelAsset modelAsset;
+    //public ModelAsset modelAsset;
+    private ModelAsset modelAsset;
+    public ModelAsset modelAssetCOCO;
+    public ModelAsset modelAssetCrack;
+    public ModelAsset modelAssetSpalling;
+    public ModelAsset modelAssetRust;
+    public ModelAsset modelAssetEfflorescence;
+    public ModelAsset modelAssetExposedRebar;
+    public ModelAsset modelAssetFive;
     public float confidenceThreshold = 0.2f;
     public float iouThreshold = 0.4f;
     [SerializeField]
@@ -59,9 +67,11 @@ public class GameManager : MonoBehaviour
     private TextMeshPro performanceText;
     private string logFilePath;
     private string currentInspectionFolder;
-    private bool enableTimeLog = true;
+    private bool enableTimeLog = false; // to track inference time
     private List<PreviousInspection> loadedInspections = new List<PreviousInspection>(); // List to track loaded previous inspections.
-    
+    private string dataSet = ""; 
+    private string currentDataset = ""; // to change models
+
     // Start is called before the first frame update
     private async void Start()
     {
@@ -90,36 +100,44 @@ public class GameManager : MonoBehaviour
         }
 
         // Initialize the ModelInference object
-        string dataSet="";
+        //string dataSet="";
         if (selectedDataSet == DataSet.COCO)
         {
             dataSet = "COCO";
+            modelAsset = modelAssetCOCO;
         }
         else if (selectedDataSet == DataSet.Cracks)
         {
             dataSet = "cracks";
+            modelAsset = modelAssetCrack;
         }
         else if (selectedDataSet == DataSet.Spalling)
         {
             dataSet = "spalling";
+            modelAsset = modelAssetSpalling;
         }
         else if (selectedDataSet == DataSet.Rust)
         {
             dataSet = "rust";
+            modelAsset = modelAssetRust;
         }
         else if (selectedDataSet == DataSet.Efflorescence)
         {
             dataSet = "efflorescence";
+            modelAsset = modelAssetEfflorescence;
         }
         else if (selectedDataSet == DataSet.ExposedRebars)
         {
             dataSet = "exposedrebars";
+            modelAsset = modelAssetExposedRebar;
         }
         else if (selectedDataSet == DataSet.FiveDamages)
         {
             dataSet = "fivedamages";
+            modelAsset = modelAssetFive;
         }
         modelInference = new ModelInference(modelAsset, dataSet);
+        currentDataset = dataSet;
 
         // Initialize the ResultDisplayer object
         frameResultsDisplayer = new FrameResults(resultsDisplayerPrefab);
@@ -159,6 +177,40 @@ public class GameManager : MonoBehaviour
         {
             if (enableInference) // Perform inference only if enabled
             {
+                //Check if the dataSet changes so the modelAsset also need to be changed
+                if (currentDataset != dataSet)
+                {
+                    if (dataSet == "cracks")
+                    {
+                        modelAsset = modelAssetCrack;
+                    }
+                    else if (dataSet == "spalling")
+                    {
+                        modelAsset = modelAssetSpalling;
+                    }
+                    else if (dataSet == "rust")
+                    {
+                        modelAsset = modelAssetRust;
+                    }
+                    else if (dataSet == "efflorescence")
+                    {
+                        modelAsset = modelAssetEfflorescence;
+                    }
+                    else if (dataSet == "exposedrebars")
+                    {
+                        modelAsset = modelAssetExposedRebar;
+                    }
+                    else if (dataSet == "fivedamages")
+                    {
+                        modelAsset = modelAssetFive;
+                    }
+                    else if (dataSet == "COCO")
+                    {
+                        modelAsset = modelAssetCOCO;
+                    }
+                    modelInference = new ModelInference(modelAsset, dataSet);
+                    currentDataset = dataSet;
+                }
                 float fullLoopStartTime = Time.realtimeSinceStartup; // Start full loop timer
 
                 // Copying transform parameters of the device camera to a Pool
@@ -345,6 +397,36 @@ public class GameManager : MonoBehaviour
             pi.DestroyInspection();
         }
         loadedInspections.Clear();
+    }
+
+    // Methods to change the dataSet used and therefore the models used for inference
+    public void OnButtonClickCrackDataset()
+    {
+        dataSet = "cracks";
+    }
+    public void OnButtonClickSpallingDataset()
+    {
+        dataSet = "spalling";
+    }
+    public void OnButtonClickRustDataset()
+    {
+        dataSet = "rust";
+    }
+    public void OnButtonClickEfflorescenceDataset()
+    {
+        dataSet = "efflorescence";
+    }
+    public void OnButtonClickExposedRebarsDataset()
+    {
+        dataSet = "exposedrebars";
+    }    
+    public void OnButtonClickFiveDataset()
+    {
+        dataSet = "fivedamages";
+    }
+    public void OnButtonClickCOCODataset()
+    {
+        dataSet = "COCO";
     }
 
 }
