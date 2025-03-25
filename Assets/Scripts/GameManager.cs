@@ -86,19 +86,13 @@ public class GameManager : MonoBehaviour
         // Look for existing folders whose names start with "inspection_"
         var directories = Directory.GetDirectories(documentsPath, "inspection_*");
         int nextId = directories.Length + 1;
-        string inspectionID = "inspection_" + nextId;
+        //string inspectionID = "inspection_" + nextId;
+        string inspectionID = $"inspection_{nextId:D4}"; // Formats the number as 4 digits, e.g., inspection_0008, inspection_0019
         currentInspectionFolder = Path.Combine(documentsPath, inspectionID);
         Directory.CreateDirectory(currentInspectionFolder);
         //Debug.Log("Created inspection folder: " + currentInspectionFolder);
 
-        // Generate a timestamped filename for each session if enableTimeLog is true
-        if (enableTimeLog)
-        {
-            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss"); // e.g., 20240203_153045
-            logFilePath = currentInspectionFolder + $"/performance_log_{modelAsset.name}_{timestamp}.txt";
-            //performanceText.text = $"logFilePath: {logFilePath}";
-        }
-
+        
         // Initialize the ModelInference object
         //string dataSet="";
         if (selectedDataSet == DataSet.COCO)
@@ -138,6 +132,14 @@ public class GameManager : MonoBehaviour
         }
         modelInference = new ModelInference(modelAsset, dataSet);
         currentDataset = dataSet;
+
+        // Generate a timestamped filename for each session if enableTimeLog is true
+        if (enableTimeLog)
+        {
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss"); // e.g., 20240203_153045
+            logFilePath = currentInspectionFolder + $"/performance_log_{modelAsset.name}_{timestamp}.txt";
+            //performanceText.text = $"logFilePath: {logFilePath}";
+        }
 
         // Initialize the ResultDisplayer object
         frameResultsDisplayer = new FrameResults(resultsDisplayerPrefab);
