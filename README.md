@@ -1,6 +1,6 @@
 # DamageSegmentationXR (Developed and tested with Unity 2022.3.47f1 and Visual Studio 2022)
 
-This repository contains the development code for an extended reality application for damage segmentation using deep learning. The application presented here corresponds to the work published in the paper ["Integrating extended reality and AI-based damage segmentation for near real-time, traceable bridge inspections"](https://doi.org/10.1016/j.autcon) by Pantoja-Rosero et al. (2025). You can access videos showcasing the use of the app at: [COCO model](https://youtu.be/qaj_2DKMpNA?si=l-_t4wXconsUqwHe), [cracks model](https://youtu.be/-hpc1krEwCc), [multiclass damage model](https://youtu.be/V-JF5vs8LLw). For detailed instructions on how to develop the application, including initial setup of Unity and Visual Studio, refer to the [manual](docs/manual/manual_app_development.pdf).
+This repository contains the development code for an extended reality application for damage segmentation using deep learning. The application presented here corresponds to the work published in the paper ["Integrating extended reality and AI-based damage segmentation for near real-time, traceable bridge inspections"](https://doi.org/10.1016/j.autcon.2025.106567) by Pantoja-Rosero et al. (2025). You can access videos showcasing the use of the app at: [cracks model](https://youtu.be/-hpc1krEwCc), [multiclass damage model](https://youtu.be/V-JF5vs8LLw). For detailed instructions on how to develop the application, including initial setup of Unity and Visual Studio, refer to the [manual](docs/manual/manual_app_development.pdf).
 
 <p align="center">
   <img src=docs/images/fig_using_AI_HL.png width="20%">
@@ -155,12 +155,12 @@ Paper:
 @article{Pantoja-Rosero2025a,
 title = {Integrating extended reality and AI-based damage segmentation for near real-time, traceable bridge inspections},
 journal = {Automation in Construction},
-volume = {},
-pages = {},
+volume = {180},
+pages = {106567},
 year = {2025},
-issn = {},
-doi = {https://doi.org/10.1016/j.autcon},
-url = {},
+issn = {0926-5805},
+doi = {https://doi.org/10.1016/j.autcon.2025.106567},
+url = {https://www.sciencedirect.com/science/article/pii/S0926580525006077},
 author = {B.G. Pantoja-Rosero and S. Salamone},
 }
 ```
